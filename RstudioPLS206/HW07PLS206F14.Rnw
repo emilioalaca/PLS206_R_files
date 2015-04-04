@@ -1,0 +1,173 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mdwlist}
+\usepackage[inner=3cm,outer=4cm]{geometry}
+\usepackage{mathtools}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Homework 07. GLMs. PLS206 Fall 2014}
+\author{Emilio A. Laca}
+\maketitle
+
+\section{Data}
+
+This exercise uses simulated data. Thus, we know the true model and whether the assumptions are met. The data simulate the number of individuals of a relatively rare mammal observed in a series of locations in East Africa. Locations were selected haphazardly. Variables measured at each location were:
+
+\begin{description*}
+  \item[nrrm] number of individuals of the relatively rare mammal seen.
+  \item[river] distance to the nearest river in km.
+  \item[tveg] vegetation type (sg: short grass, tg: tall grass, sh: shrubs, wl: woodland, svn: savanna )
+  \item[road] distance to nearest road in km.
+  \item[cover] visual cover; proportion of a vertical surface visible from 20 m.
+\end{description*}
+
+The data simulation code is presented for completeness, but for the analysis we use a preset simulation that remains constant across compilations of this document.
+<<datasim>>=
+dsim <- data.frame(river = round(runif(100, min=0.5, max=15),1),
+                 tveg = rep(c("sg","tg","sh","wl","svn"),each=20),
+                 road = round(rchisq(100, 6),1),
+                 cover = c(
+                   rbeta(20,2,10),
+                   rbeta(20,4,8),
+                   rbeta(20,10,3),
+                   rbeta(20,8,4),
+                   rbeta(20,6,6)))
+beta0 <- 0.05
+bRiver <- -0.09
+bRoad <- 0.04
+bRiverRoad <- 0.01
+bCover <- 2
+dsim$nrrm <- rpois(100,
+                 exp(beta0 +
+                     bRiver*dsim$river +
+                     bRoad*dsim$road +
+                     bRiverRoad*dsim$river*dsim$road +
+                     bCover*dsim$cover))
+@
+
+\section{Data exploration}
+We start with the hypothesis that the species will be more abundant in grassland areas with good cover close to rivers and far from roads. We plot the data against each predictor.
+
+<<explore, fig=TRUE>>=
+d1 <- read.csv("../Examples/dataHW07F14.txt", header=TRUE)
+library(car)
+library(ggplot2)
+par(mfrow=c(3,1))
+scatterplot(nrrm ~ river | tveg, data=d1)
+scatterplot(nrrm ~ road | tveg, data=d1)
+scatterplot(nrrm ~ cover | tveg, data=d1)
+pairs(d1)
+@
+
+There are clear trends in the plots for cover and roads, but the effect of distance to rivers appears weak. This may be a result of the variability that masks the effects. A model will "clean up" the variability and make it easier to see patterns. Cover is clearly related to vegetation type. This collinearity may make it difficult to pick the correct "causal" factor.
+
+
+\section{Modeling}
+\subsection{Why use Poisson?}
+The number of individuals counted is a positive discrete variable. There is no limit to the potential number of individuals found. We start with a distribution that accommodates both properties, the Poisson distribution. We must take into account the fact that there are 100 observations, thus, we should not entertain models with more than 15 degrees of freedom.
+
+\subsection{Select a model starting with tveg plus main effects and second order interactions for the other predictors.}
+
+<<glm1>>=
+m1 <- glm(nrrm ~ tveg + (cover+river+road)^2, family="poisson", data=d1)
+summary(m1)
+anova(m1, test="Chisq")
+Anova(m1, test="Wald", type=3)
+@
+
+The type \verb!Anova()! tests show that the least significant effect is the interaction between cover and road. We can eliminate that term and repeat the test to determine who can be eliminated next
+
+<<glm2>>=
+m2 <- glm(nrrm ~ tveg + (cover+river+road)^2 - cover:road, family="poisson", data=d1)
+Anova(m2, test="Wald", type=3)
+@
+
+Now, tveg is the variable that is least significant when entered last, so it is removed next. We drop model terms with the restriction that if an interaction is significant, the main effects involved must be kept in the model.
+
+<<glm3>>=
+m3 <- glm(nrrm~cover+river+road+cover:river+road:river, family="poisson", data=d1)
+Anova(m3, test="Wald", type=3)
+anova(m1,m3, test="Chisq")
+@
+
+The \verb!anova()! test shows that in spite of the terms dropped the current model is not significantly worse than the initial full model. The Type III tests suggest that the next candidate for deletion is cover:river.
+
+<<glm4>>=
+m4 <- glm(nrrm~cover+river+road+road:river, family="poisson", data=d1)
+Anova(m4, test="Wald", type=3)
+anova(m1,m4, test="Chisq")
+AIC(m4)
+@
+
+This final model has only significant terms, it has the lowest AIC, and it is not significantly worse than the full model. This is a good candidate for final model and we keep it. There may be one other model that has similar properties, and that would also be a good choice.
+
+\subsection{Test for overdispersion}
+This model include all the seemingly important factors, but it may have a problem of overdispersion. Overdispersion refers to the violation of the implicit assumption that the mean is equal to the variance for Poisson distributed data. If the assumption is true, then the residual deviance should have a $\chi^2$ distribution with n-p = 95 df. The value of \Sexpr{round(deviance(m4),2)} with 95 df has a probability of \Sexpr{round(1-pchisq(deviance(m4),95),3)}, which is suggestive of overdispersion.
+
+One way to test for overdispersion is to fit a model using the quasipoisson family, which has one additional parameter to allow for a variance that is greater (by a constant factor) than the mean. Technically, the model development should be repeated with the new approach, but here we just test for overdispersion. The package AER has a function \verb!dispersiontest()! that performs a test of significance of overdispersion.
+<<>>=
+library(AER)
+dispersiontest(m4, trafo=1)
+@
+
+The test indicates that there is no significant overdispersion, which is consistent with the fact that data were actually simulated from a Poisson distribution.
+
+\subsection{Inspection of residuals}
+
+<<fig=TRUE>>=
+par(mfrow=c(2,2))
+plot(m4)
+@
+
+The plot of response or raw residuals show no pattern deviating from a flat overall trend. The normal Q-Q plot exhibits a strong agreement with the straight line representing normality of the standardized deviance residuals. This means that the assumption of normality for large sample size appears to be correct, and that the tests that are based on asymptotic normality are expected to give good estimates of the true probabilities.The graph of standardized deviance residuals is also flat and shows no deviation of expectation, with the potential appearance of low variance for low predicted values. Unlike the raw residuals whose variance is supposed to change with the mean, the standardized deviation residuals are expected to have constant variance. The appearance of low variance in the left is most likely just an inaccurate visual impression due to the fact that there are few observations in that range. Finally, the leverage plot shows that observation 74 has high leverage and it is influential. This observation should be checked for errors or unusual circumstances (if it were real). Given that the observation comes from a known model and distribution via simulation, we can simply use it to understand that outliers happen. Even when everything is OK.
+
+\subsection{Effect of cover}
+
+<<>>=
+summary(m4)
+@
+
+As cover increases by one unit, the log of the expected number or abundance of the rare mammal is expected to increase by 1.95 units. Because of the link function, the predictors are no longer linearly related to the mean response. Thus, in terms of difference in the expected number of individuals of the rare mammal, the effect of a unit increase in cover depends on specific range where that increment takes place. Therefore, it is easiest to comprehend and communicate the effects of predictors by using graphical representations. Note that when using graphics, error or confidence bars will be asymmetric. Confidence or bar extremes should be calculated in the link dimension and "back-transformed" in the last step prior to drawing the graphs.
+
+\subsection{Tabular and graphical interpretation of effects}
+
+First we calculate a table of values to represent the effects of predictors.
+
+<<echo=FALSE>>=
+library(xtable)
+@
+<<results=tex>>=
+t.data <- expand.grid(cover=c(0.25,0.75), river=c(1,5),road=c(2,20))
+t.data$nrrm <- predict(m4,newdata=t.data, type="response")
+print(xtable(t.data))
+
+@
+
+Mammal abundance increases exponentially with increasing cover at all distances from rivers and roads. The abundance is inversely proportional to distance from roads. The positive interaction between river and road is shown by the fact that at short distances to roads (2) the highest abundance is near rivers, whereas the reverse is true for long distances from rivers. This, of course has no factual value because the data were simulated by your professor to show some sort of plausible and sensible distribution of a mammal that likes to have lots of cover and be away from roads.
+
+Finally, we use more prediction points to make a smoother version of the response of mammal abundance to changes in predictor values.
+<<fig=TRUE>>=
+# Predictions for various levels of cover and distance to river at average level of road
+mean(d1$road)
+range(d1$river)
+range(d1$cover)
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05), river=c(0,5,10,15),road=c(2,20))
+p.data$nrrm <- predict(m4,newdata=p.data, type="response")
+
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~road) +
+  labs(x = "Cover", y = "Predicted number of rare mammal")
+@
+
+
+
+
+
+
+
+\end{document}

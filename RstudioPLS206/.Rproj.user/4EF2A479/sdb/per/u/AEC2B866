@@ -1,0 +1,17 @@
+{
+    "contents" : "library(RandomFields)\nx <- seq(0, 10, if (interactive()) 0.001 else 1)\nz <- RFsimulate(RMexp(), x)\nplot(z)\nz1 <- as.numeric(z@data$variable1)\ny<-dnorm(seq(0,1,0.01), mean=.5, sd=0.3)\ny2<-dnorm(seq(0,1,0.01), mean=.5, sd=1)\nplot(y2~seq(0,1,0.01), type=\"l\")\nlines(y~seq(0,1,0.01), type=\"l\")\nconvyz1 <-convolve(z1,y, type=\"f\")\nplot(convyz1, type=\"l\")\npar(mfrow=c(3,1))\nconvy2z1 <-convolve(z1,y2, type=\"f\")\nlines(convy2z1, col=\"blue\")\nabline(h=50, col=\"red\")",
+    "created" : 1390942401067.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "696312069",
+    "id" : "AEC2B866",
+    "lastKnownWriteTime" : 3410145567030987843,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

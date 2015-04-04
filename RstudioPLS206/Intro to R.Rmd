@@ -1,0 +1,341 @@
+---
+title: "PLS 206 - Introduction to R programming"
+author: "Matt Espe"
+date: "Tuesday, September 30, 2014"
+output: pdf_document
+---
+####(PLS 206 FAll 2014)
+
+This is a very basic crash course in R programming intended for students in PLS 206 who are new to R.  This cannot cover everything you will need for this course and your research, however, there are many wonderful resources available free online with more detailed explanations.
+
+####Constants
+R has several pre-defined constant values.  These include *NA* (missing value), *NULL* (empty data), *NAN* (Not a Number), *Inf* (infinity), and *TRUE* and *FALSE*.
+
+####Arithmetic
+R includes standard arithmetic operators, so you can make calculations inside R. R follows standard order of operations. For example:
+
+```{r}
+1+2/5
+```
+
+####Logical Operators
+R has a number of operators for logical comparisions, including <,>,<=,>=,==,!=. The != operator is a logical "does not equal".  For each of these, R will evaluate the statement and return whether the condition is TRUE or FALSE.
+```{r}
+1!=2
+```
+####Data types
+Data in R is classified as either a *character* (text), *numeric*, *factor*, or *logical*  (TRUE or FALSE). Factors are a special case of character values and will be covered more later. Character values are distiguished by the use of quotations, though some outputs will omit the quotes.
+
+####Object-oriented programming
+R uses an object oriented programming language.  This means that values are stored in 'objects' that can then referred to or manipulated by other operations.
+
+Object-oriented programming is also characterized by the fact that objects inherit properties from their class. Some of these properties are called "methods" and they determine how an object handles a function. Different classes have the ability to respond differently (but sensibly) to the same function.
+
+For example:
+```{r}
+ten <- 10
+ten
+```
+
+The "<-" symbol is the assigment symbol.  This code assigns the value "10" to the named object "ten".  When "ten" is called, R knows that we are referring to the saved object named "ten".  
+
+R can assign many different data structures to named objects, including vectors, matrices, dataframes, and lists. Furthermore, R can assign functions to a named object.
+
+Example: response of data frames and models to "summary"
+# create a simple data frame and a simple lm() and ask for their summaries.
+
+
+####Types of data structures
+
+A *vector* is a string of values. You can combine values into a string using the concatenate function "c( )". 
+
+```{r}
+odd<-c(1,3,5,7,9)
+odd
+```
+Breaking this down: 
+
+**odd** <- c(1,3,5,7,9) - "odd" is the name of the object to be created  
+odd **<-** c(1,3,5,7,9) - We are assigning values to "odd"  
+odd <- **c(** 1,3,5,7,9**)** - The function call to concatenate values together  
+odd <- c(**1,3,5,7,9**) - the values to concatenate 
+
+*Vectors must be the same data type!* If you try to create a vector with different data types, R will **coerce** the values to be of the same type. The type is picked as the simplest that will not lose information.
+```{r}
+mixture<-c(1,2,3,"b","a")
+mixture
+```
+Notice how the number values are surrounded by quotes.  R has stored them as the text values for each number. If you attempt to use them as numbers, R will print an error. *This means if your data includes any values with characters such as "?", "-", or "!", they will not be recognized as numbers but rather as text!*
+
+Values in a vector are indexed by position.  You can specify a certain number in the vector with the use of square brackets. For example, to get the 4th value of the vector "odd" :
+
+```{r}
+odd
+#Look at just the 4th value
+odd[4]
+```
+Values in a vector always remain at the same index throughout operations (unless you explicitely assign values in a new order)
+
+A *matrix* is a 2D analog of a vector.  Like a vector, all the values must be of the same type.  Matrices are indexed by row and column, and can be referred to using the square brackets [row, column].
+
+An *array* is a matrix with more than 2 dimensions.
+
+A *dataframe* is a collection of vectors.  Often these are displayed like a matrix, but unlike a matrix each vector can be of a different data type.  R restricts dataframes to have equal length vectors. *Important! Even though a dataframe is displayed similar to a matrix, matrix operations cannot be conducted on a dataframe.*  
+
+Finally, a *list* is a collection of vectors similar to a dataframe, but unlike a dataframe the vectors within a list can be of differing lengths.  Furthermore, lists can have complex structures with other lists or dataframes nested within a list.
+
+### Sorting data frames. Show example data.frame[order(data.frame$variable),]
+
+####For loops
+
+Using a "for loop", operations can be iterated over a matrix or vector.  This can be especially helpful for simulations.
+
+For loops have special syntax:
+
+for ( *symbol* in *sequence* ) {  
+  *expressions*  
+}  
+
+Each expression is run once for each element in sequence, and multiple expressions can be listed.  The *symbol* is a "stand-in"" for the number the for loop is running.  If a value is assigned to a named object inside the loop, it will be re-assigned each iteration of the loop. For example:
+```{r}
+for (i in 1:10) {
+  a<-i #object creation, no questions asked.
+}
+a
+```
+Notice that "a" is a single value, and the last in the sequence of 1:10.  Contrast this with:
+```{r}
+a<-NA
+for (i in 1:10){
+  a[i]<-i #substitution or addition of part of a previously existing object
+}
+a
+```
+This modified for loop returned a vector with 10 values.  
+
+First, note that the object "a" is assigned one of the constant values (NA) before the for loop.  Then, we used indexing to specify the place in the vector "a" to save the current iteration number.  Because of the indexing, we must first create the object "a" before assigning values to it. Unlike the first for loop, each value of the iteration gets recorded, rather than assigned over.
+
+####If Statements
+
+If statements are used in R to specify an operation if a condition is met.  They also have special syntax.
+
+if ( *condition* ) {  
+  *expression*  
+}
+
+The condition must be a logical argument (see above for logical operators).
+```{r} 
+a <- 3
+if (a > 2) {
+  print("Yay!")
+}
+```
+If statements can be expanded to include an "else" statement.  The additional syntax is:
+
+if ( *condition* ) {  
+  *TRUEexpression*  
+} *else* {  
+  *FALSEexpression*  
+}
+
+The first expression is executed if the statement is true, whereas the second is executed if it is false.
+
+```{r}
+a<-3
+if (a>4) {
+  print("Yay!")
+} else {
+  print("Boo!")
+}
+```
+####Functions
+
+In general, functional calls in R follow this structure:  
+
+functionName(argument1, argument2,...)  
+
+Every function has a name, but each function can have any number of arguments, including zero.
+
+Functions can be nested inside of each other for complex operations.  For example:
+```{r}
+#Example of nested functions
+log(mean(rnorm(n = 10, mean = 10, sd = 1)))
+```
+Complex statements like this are best understood by working from the inside out:
+
+log(mean(**rnorm(n = 10, mean = 10, sd = 1)**)) - Sample 10 values from a normal distribution with mean = 10 and sd = 1.  
+log(**mean(**rnorm(n = 10, mean = 10, sd = 1)**)**) - Calculate the mean of those random values.  
+**log(**mean(rnorm(n = 10, mean = 10, sd = 1))**)** - Take the log of the mean of the random sample.  
+
+####Functions we will use a lot this quarter:
+*(this section uses datasets included with R for demonstration purposes)*
+
+**To look at data structure**
+
+class() - Print the data type of the object  
+str() - Look at the structure of the data object    
+head() - Print just the first few rows    
+tail() - Print just the last few rows  
+dim() - dimensions of an object   
+summary() - Summary statistics by column
+
+```{r}
+#What class is "cars"?
+class(cars)
+#What is the structure of the "cars" object?
+str(cars)
+#The top values
+head(cars)
+#The bottom values
+tail(cars)
+#Dimensions of the object
+dim(cars)
+#summary stats by column
+summary(cars)
+```
+
+**To create sequences, random samples, or random numbers**
+
+seq() - makes a sequence of numbers, also can use ":" operator  
+sample() - randomly sample from a set. Can specify with or without replacement  
+rnorm() - random number generator from a normal distribution  
+rep() - repeat a number or vector a specified number of times  
+
+```{r}
+#These are similar
+seq(from = 1,to = 10,by = 1)
+1:10
+#Random sample of elements without replacement
+sample(x = 1:10, size = 10)
+#Random sample of elements with replacement
+sample(x = 1:10, size = 10, replace = TRUE)
+#Random sample from normal distribution
+rnorm(n = 10)
+#Repeat 1,2,3 three times
+rep(1:3, 3)
+```
+
+#### Wake up call: how many different samples can you get in each "sample" case?
+
+
+
+**To create a matrix**
+
+matrix() - create a matrix from a vector of values, specifying the number of rows and columns desired  
+cbind() - bind vectors together as a matrix, with each vector becoming a column  
+rbind() - bind vectors together as a matrix, with each vector becoming a row  
+
+```{r}
+#These give the same results
+matrix(1:10, ncol=2, nrow=5)
+cbind(1:5, 6:10)
+#This give a 2 X 5 matrix
+rbind(1:5, 6:10)
+```
+
+**To create dataframe**
+
+data.frame() - create a dataframe from vectors
+
+```{r}
+a<-c(5,6,7)
+b<-c("a","b","c")
+data.frame(a,b)
+```
+
+#### READING IN YOUR DATA INTO A DATAFRAME
+
+**To subset**
+
+$ - shorthand to specify a named column  
+[] - can subset by operators inside []. Rows are specified by [x,], columns by [,x]. *See examples.*  
+subset() - subset by criteria  
+which() - can be used inside of [] for subsetting  
+match() - matches values from one object to another.  
+```{r}
+#These two give the same result
+cars$speed
+cars[,1]
+
+#Moving the comma returns the row
+cars[1,]
+
+#These are also similar
+subset(cars, speed==4)
+cars[which(cars$speed==4),]
+
+#Which row does speed equal 8?
+match(8, table = cars$speed)
+cars[match(8, table = cars$speed),]
+
+#removing values with the "-"
+cars[-c(1,3,5,10:50),]
+
+#Remove speeds greater than 11
+cars[-which(cars$speed>11),]
+```
+
+**To exclude values**
+na.omit()- omit all rows that include NA  
+complete.cases()- returns a logical vector of complete cases, similar to is.na()
+
+ 
+**To apply a function to a dataframe**
+
+apply() - apply a function by either column or row. Margin = 1 for rows, = 2 for columns.  
+aggregate() - apply a function by criteria or expression
+
+```{r}
+#Apply mean() to the columns of cars
+apply(cars,MARGIN = 2, mean)
+#Calculate the mean distance within groups of the same speed
+aggregate(dist~speed,data=cars, mean)
+#Same as above
+aggregate(cars$dist, by=list(cars$speed), mean)
+
+```
+
+####Packages
+
+R is fully open-source, and can be easily modified or programmed to extend its capabilities.  Many packages are available that have been written by other researchers for specific tasks. R includes many packages in the default install, with many more available for install.  Packages must be loaded before they can be used.
+
+**Installing Packages**
+install.packages("packageName") 
+
+**Loading Packages**
+library(packageName)
+
+
+####Plotting
+
+R includes powerful graphing capabilities, with more capabilities accessible through packages.
+
+plot() - basic scatterplot      
+abline() - add lines to a graph  
+curve() - add curve to a graph    
+boxplot() - basic boxplot    
+barplot() - basic bar graph      
+hist() - basic histogram     
+pairs() - pairwise scatterplot of variables      
+
+```{r}
+plot(Ozone~Temp, airquality)  
+abline(lm(Ozone~Temp, airquality))
+boxplot(Temp~Month, airquality)  
+barplot(table(chickwts$feed))  
+hist(airquality$Ozone)  
+pairs(airquality)  
+```
+
+Lattice and ggplot2 are two popular graphics packages for R that extend the capabilities significantly.
+
+#### Getting Help with R
+There are several good resources for help with R, but the first stop is often:
+
+http://www.google.com
+
+
+------------------------
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.

@@ -1,0 +1,42 @@
+\documentclass[letterpaper]{tufte-book}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}  % extended mathematics
+\usepackage{booktabs} % book-quality tables
+\usepackage{units}    % non-stacked fractions and better unit spacing
+\usepackage{multicol} % multiple column layout facilities
+\usepackage{lipsum}   % filler text
+\usepackage{fancyvrb} % extended verbatim environments
+  \fvset{fontsize=\normalsize}% default font size for fancy-verbatim environments
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+
+\title{Homework 03 Questions. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+
+\begin{document}
+
+\setkeys{Gin}{width=1.1\marginparwidth} %% Sweave
+
+\maketitle
+
+
+<<randomness>>=
+t <- rnorm(100)
+@
+%% a margin figure
+<<a, fig=FALSE, echo=FALSE>>=
+plot(density(t))
+@ 
+
+\begin{marginfigure}
+<<fig=TRUE, echo=FALSE>>=
+<<a>>
+@   
+\end{marginfigure}
+
+
+
+\end{document}

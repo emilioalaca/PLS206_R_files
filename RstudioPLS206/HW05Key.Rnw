@@ -1,0 +1,148 @@
+\documentclass[letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\parskip 7.2pt
+
+\title{Homework 05 Key. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+\section{PCA, PCR and PLSR}
+Read and use sections 9.2 and 9.3 of Faraway-PRA as a guide.
+Use the meatspec data file.
+
+The intensity of radiation in each of 100 frequency bands (V1-V100) was measured for 215 samples of meat using a Near Infrared Transmission (NIT) analyzer. Each sample was also analyzed for fat content using a more expensive and time consuming wet-chemistry method.
+
+Exclude the last 43 observations for adjusting the models.
+
+<<chunk1>>=
+library(faraway)
+data(meatspec)
+names(meatspec)
+train <- meatspec[1:172,]
+validate <- meatspec[173:215,]
+rmse <- function(x,y) sqrt(mean((x-y)^2)) #make a function to calculate the square root of the mean squared error
+@
+
+ We made two separate datasets, "train" is the training set, and "validate" is the validation data. The function rmse facilitates the calculation of the square root of the mean squared prediction error.
+\section {PCA}
+\subsection {Perform an analysis of principal components of variables V1-V100 based on the correlation matrix. [10]}
+
+Make sure that you do not include "sample" or "fat." Report the eigenvector elements for PC2, V1-V3.
+
+<<pca>>=
+meatpca <- prcomp(meatspec[1:172,-101], scale.=TRUE)
+str(meatpca)
+meatpca$rotation[1:3,2]
+rownames(meatpca$rotation)
+colnames(meatpca$rotation)
+@
+
+The matrix whose columns are the eigenvectors that are used to calculate the PC scores is the "rotation" element in the prcomp object that contains all results from the PCA. The matrix columns are named with the PC name, and the rows have the variable names.
+
+\subsection {Make a Scree and a loading plot and report both. [10]}
+
+<<label=biplot,include=FALSE>>=
+biplot(meatpca) # Display biplot
+@
+<<label=screeplot,include=FALSE>>=
+plot(meatpca, main="") #Display scree plot
+@
+
+\begin{figure}
+\begin{center}
+<<label=figbiplot,fig=TRUE,echo=FALSE>>=
+<<biplot>>
+@
+\end{center}
+\caption{Biplot showing the observations and the arrows constructed with the loadings or correlations between each original variable and the first two PC's.}
+\label{fig:qq}
+\end{figure}
+
+
+\begin{figure}
+\begin{center}
+<<label=figscreeplot,fig=TRUE,echo=FALSE>>=
+<<screeplot>>
+@
+\end{center}
+\caption{Scree plot shows the eigenvalues or variances of the principal components in order. In this specific case, the scree plot does not have much value, because we are not trying to describe the structure of the data.}
+\label{fig:qq}
+\end{figure}
+
+\subsection{What is the loading of V3 on PC2? [10]}
+
+Loadings are the correlations between each variable and each PC. They are also the values used to plot the arrows representing variables in the biplot. Variables with arrows that are long (length close to 1, say, greater than 0.9) are well represented in the subspace or plane formed by the PC's plotted (the default is PC1 and PC2).
+
+<<loadings>>=
+cor(meatpca$x[,2],train[,3])
+@
+
+\subsection {If your goal were to summarize the information with fewer dimensions, how many PC's would you retain or discuss? Report the number of PC's you retain and the name of the method you used. [10]}
+
+The scree plot shows the eigenvalues in order. This plot can be used to look for breakpoints or "elbows" to select the number of PC's to be retained when using PCA for detecting and describing the structure of a data matrix. In the case of the meat samples, the first PC accounts for most of the variance. This PC1 essentially measures the total amount of light that is transmitted through the sample. Since we are not interested in studying the structure of the data matrix but in making good estimations of the fat content of the sample, no further interpretation would be needed.
+
+The number of PC's to be retained can be selected by inspecting the scree plot, by looking at the cumulative variance accounted for the PC's, by keeping those PC's that are greater than the average (1 if using the correlation matrix), or by keeping those PC's whose eigenvalues are significantly greater than 1. Eigenvalues near 1 indicate that there is not correlation  in the data.
+
+\subsection {Use principal components regression to develop a good model to predict fat content based on the NIT measurement of samples. [30]}
+
+Consider up to 40 PC's. Select the model with the lowest MSPR for the validation data held out. Report the model selected and the MSPR.
+
+<<pcr, fig=TRUE>>=
+library(pls)
+pcrmod <- pcr(fat ~ ., data=train, validation="CV",ncomp=40)
+RMSEP(pcrmod, newdata=validate)
+validationplot(pcrmod, newdata=validate)
+@
+
+Notice how the RMSEP declines to a minimum of 1.885 with 27 components and then it starts increasing again. The increase is due to overfitting of the model. The model becomes better to predict the training sample, but worse at predicting the validation data.
+
+\subsection {Partial least squares regression. [30]}
+
+Follow the instructions in Faraway-PRA and perform a partial least squares regression of fat on the light transmission data. What does the function sweep() do?
+
+Sweep out Array Summaries
+
+Description
+
+Return an array obtained from an input array by sweeping out a summary statistic.
+
+Usage
+
+sweep(x, MARGIN, STATS, FUN = "-", check.margin = TRUE, ...)
+Arguments
+
+x  
+an array.
+
+MARGIN	
+a vector of indices giving the extent(s) of x which correspond to STATS.
+
+STATS	
+the summary statistic which is to be swept out.
+
+FUN	
+the function to be used to carry out the sweep.
+
+check.margin	
+logical. If TRUE (the default), warn if the length or dimensions of STATS do not match the specified dimensions of x. Set to FALSE for a small speed gain when you know that dimensions match.
+
+...	
+optional arguments to FUN.
+
+Details
+
+FUN is found by a call to match.fun. As in the default, binary operators can be supplied if quoted or backquoted.
+
+FUN should be a function of two arguments: it will be called with arguments x and an array of the same dimensions generated from STATS by aperm.
+
+The consistency check among STATS, MARGIN and x is stricter if STATS is an array than if it is a vector. In the vector case, some kinds of recycling are allowed without a warning. Use sweep(x, MARGIN, as.array(STATS)) if STATS is a vector and you want to be warned if any recycling occurs.
+
+Value
+
+An array with the same shape as x, but with the summary statistics swept out.
+
+\end{document}

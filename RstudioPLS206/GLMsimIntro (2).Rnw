@@ -1,0 +1,103 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mdwlist}
+\usepackage[inner=3cm,outer=4cm]{geometry}
+\usepackage{mathtools}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{GLM simulation. PLS206 Fall 2014}
+\author{Emilio A. Laca}
+\maketitle
+
+\section{Poisson data}
+Imagine we have a known Poisson process that generates random numbers with means equal to 1, 5 and 5 for covariate X values equal to 1, 2 and 3. Let's create a data set with 10 random observations for each level of X.
+
+<<simData1, fig=TRUE>>=
+d1 <- data.frame(mu=rep(c(1,6,7),each=10), X=rep(1:3,each=10))
+d1$Y <- rpois(30,lambda = d1$mu)
+plot(d1$X, d1$Y, pch=16)
+@
+
+First, let's calculate the deviance for a Saturated model and a minimal or Null model. The saturated model has as many parameters as there are means for the Poisson distribution. We have three different means that we identify with the levels of the covariate X.
+
+<<deviance1>>=
+print("Residual deviance of the saturated model")
+deviance(m.Sat <- glm(Y~factor(Y), family="poisson", data=d1))
+print("Residual deviance of the Null model")
+deviance(m.Null <- glm(Y~1, family="poisson", data=d1))
+@
+
+The saturated model uses three parameters, one $\mu_i$ for each level of X. The set of parameters constitute the vector \textbf{$\beta$} in the linear part of the glm, which has a role practically identical to \textbf{ $\beta$} in linear models in general. We can see how the glm partitions the deviance by looking at the results of the two models:
+
+<<deviance>>=
+m.Sat
+m.Null
+@
+
+For the purpose of developing an intuitive idea of what deviance means, one can think of deviance as residual sum of squares. When the model only has an intercept (overall mean) the deviance is all in the residual. When the model is saturated, all the deviance "explainable" by different parameter values is in the model and the residual is the minimum possible. Deviance is defined as the -2 times the ratio of the likelihood of a model being considered to the likelihood of the saturated model. The deviance scales the likelihood, because the likelihood depends on the number of observations. More observations always lead to smaller probability and likelihood.
+
+\begin{eqnarray}
+    deviance = -2 \phi log [(L(model)/L(SaturatedModel)]
+    \label{deviance1}
+\end{eqnarray}
+
+
+
+\section{Understanding likelihood and saturated models}
+In order to understand how deviance is calculated we need to understand likelihood and calculate the likelihood of a saturated model. Then, we should be able to retrieve the total deviance of a dataset by calculating the difference between the likelihood of the saturated and the null (intercept only) model. The likelihood is simply the product of the values of the probability density function for each observation given a set of parameter values.
+
+<<likeli1>>=
+library(likelihood)
+exp(coef(m.Null))
+fitted(m.Null)
+dpois(d1$Y,exp(coef(m.Null))) # probabilities under minimal null model
+log(prod(dpois(d1$Y,exp(coef(m.Null))))) # likelihood of null model
+logLik(m.Null)
+dpois(d1$Y, d1$Y) # probabilities in saturated model
+log(prod(dpois(d1$Y, d1$Y))) # likelihood of saturated model
+# deviance is defined as D = 2*phi*(likelihood(sat) - likelihood(mod))
+2* 1* (log(prod(dpois(d1$Y, d1$Y))) - log(prod(dpois(d1$Y,exp(coef(m.Null))))))
+# deviance of null model
+@
+
+A saturated model has a different mean for each observation and thus, it has the maximum possible likelihood for the data. This maximum is taken as the "benchmark" or "baseline" for the data and distribution (Poisson) used: no other model can have greater likelihood. On the other extreme, a model with just one parameter for all observations is the worse sensible model possible. The difference between the best and the worst possible is the deviance available to account for by good models. Good models will account for a lot of that available deviance with few parameters. Now that we have a handle on the total deviance, we can turn to the deviance contributed by each observation, called "deviance residuals."
+
+Deviance residuals are defined as the square root of each term in the sum to calculate the total deviance, each with the sign of the difference between each observation and the corresponding estimated mean.
+<<dev1>>=
+residuals(m.Sat, type="deviance") # all zero, of course
+residuals(m.Null, type="deviance")
+# call the set of probabilities for the saturated model pSat
+pSat <- dpois(d1$Y, d1$Y)
+log(pSat)
+# call the set of probabilities for the null model pNull
+pNull <- dpois(d1$Y,exp(coef(m.Null)))
+log(pNull)
+2*1*log(pSat/pNull) # squared deviance residuals
+sign(d1$Y-fitted(m.Null))*sqrt(2*1*log(pSat/pNull))
+residuals(m.Null)
+@
+
+\section{Binomial regression}
+
+As an example of binominal data we use data on disease incidence in almonds. As they mature, almonds may develop a rot known as hull rot. The data we use are modified from Saa (2014) and are measurements of incidence of hull rot as a function of developmental time and nitrogen fertilization. Data have been randomly modified. Original data are not shown.
+
+<<>>=
+d2 <- read.csv("~/Google Drive/PLS206F13/Examples/HW07hrdata.txt", header=TRUE)[,-1]
+d2
+@
+
+\begin{description*}
+  \item[block] block indentification number; there were four blocks.
+  \item[nitro] level of N fertilization in kg/ha.
+  \item[nspurs] total number of spurs marked at the beginning of season.
+  \item[nH] number of spurs with hull rot at the end of the season.
+\end{description*}
+
+Because there is a set number of spurs observed, the total number of spurs infected is bounded between 0 and the total number of spurs observed. If we assume that each spur is an independent observation with a certain probability of developing hull rot, the final number of spurs infected has a binomial distribution. The linear part of the model specifies that the probability can have effects of block and of nitrogen fertilization.
+
+
+
+\end{document}

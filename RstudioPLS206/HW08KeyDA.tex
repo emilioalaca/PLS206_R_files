@@ -1,0 +1,19 @@
+\documentclass{article}
+
+\usepackage{Sweave}
+\begin{document}
+\input{HW08KeyDA-concordance}
+
+\title{Homework 06 Key. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+\maketitle
+
+\section{Discriminant analysis}
+
+\subsection{Develop DA function. [25]}
+Use the file xmpl\_seedDA.dat. Exclude the rows where hold.out equals 1 to develop a discriminant rule based on all morphological variables with the remaining rows.
+Determine if there is heterogeneity of variance covariance by using a couple of 3D plots. Use a linear or quadratic discriminant function according to your assessment Set prior probabilities to be equal.
+
+\begin{Schunk}
+\begin{Sinput}
+> seed <- read.csv("../Examples/xmpl_seedDA.dat", header=TRUE)

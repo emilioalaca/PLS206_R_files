@@ -1,0 +1,15 @@
+{
+    "contents" : "## Bootstrapping cases\n\nlibrary(boot) #load necessary package\n\ndatab<-read.csv(\"xmpl_Boots_original.csv\", header=T) # read collin data for the example; may need to specify full path\n\n# The boot function needs the user to specify a function that returns the statistic\n# of interest, or a vector with various statistics of interest.\n# We create the function \"betas\" to get all the estimated regression coefficients.\n\nbetas<-function(data,i)\n{ #starts body of function\nbootsample<-data[i,] # creates a bootstrapped sample with a set of rows \"i\"\nmodel<-lm(Y~X1+X2, data=bootsample) # uses the bootstrap sample to estimate betas; no colin variables\ncoef(model) # extracts and returns betas\n} # end body of function\n\nnoCol.boot<-boot(datab,betas,R=1000) # performs boostrapping and saves boot object into noCol.boot\n\nnoCol.boot # see object; t#*'s refer to the different quantities calculated\n\noriginal.model<-lm(data=datab,Y~X1+X2) # calculate non-bootsttrapped model\n\nsummary(original.model)\nhist(noCol.boot$t[,1])\nhist(noCol.boot$t[,2])\nhist(noCol.boot$t[,3])\nboot.ci(noCol.boot, index=1)\nboot.ci(noCol.boot, index=2)\nboot.ci(noCol.boot, index=3)\nmean(noCol.boot$t[,1])\nconfint(original.model)\n# Collinear data\n\nbetasr<-function(data,i)\n{\nbootsample<-data[i,]\nmodel<-lm(Yr~X1r+X2r, data=bootsample)\ncoef(model)\n}\n\nCol.boot<-boot(datab,betasr,R=1000)\n\noriginalr.model<-lm(data=datab,Yr~X1r+X2r)\n\nsummary(originalr.model)\nboot.ci(Col.boot, index=2)\nboot.ci(Col.boot, index=3)\nconfint(originalr.model)\n# Resampling residuals\nresids<-residuals(original.model)\nX1<-datab$X1\nX2<-datab$X2\nres.data<-data.frame(resids, X1, X2) # make data frame with residuals and predictors\n\nyhat<-fitted(original.model) # save the predicted values for original model\n\n# create function with subset i of rows for each bootstrap sample\nbeta.res<-function(res.data, i) {\n\ty<-yhat+res.data[i,1]\n\tbdata<-data.frame(y,X1,X2)\n\tmodel<-lm(y~X1+X2, data=bdata)\n\tcoef(model)\n\t}\n\nnoCol.boot.res<-boot(res.data, beta.res, R=2000) # perform bootstrapping\n",
+    "created" : 1352780718709.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "62208460",
+    "id" : "C3ACD68B",
+    "lastKnownWriteTime" : 1257438609,
+    "path" : "~/Documents/TeachServ/CLASSES/AGR206/PLS206F10/RstudioPLS206/Bootstrapping.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

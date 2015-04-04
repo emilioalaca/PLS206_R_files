@@ -1,0 +1,103 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Homework 06 Key. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+\maketitle
+
+\section{Discriminant analysis}
+
+\subsection{Develop DA function. [25]}
+Use the file xmpl\_seedDA.dat. Exclude the rows where hold.out equals 1 to develop a discriminant rule based on all morphological variables with the remaining rows.
+Determine if there is heterogeneity of variance covariance by using a couple of 3D plots. Use a linear or quadratic discriminant function according to your assessment Set prior probabilities to be equal.
+
+<<seedda1, fig=TRUE>>=
+seed <- read.csv("../Examples/xmpl_seedDA.dat", header=TRUE)
+seedt <- seed[seed$hold.out!=1,]
+seedv <- seed[seed$hold.out==1,]
+library(rgl) # for live 3D plots.
+library(scatterplot3d)
+scatterplot3d(seedt$area,seedt$perimeter,seedt$length,
+    color=c("red","blue","green")[seedt$spp])
+# plot3d(seedt$area,seedt$perimeter,seedt$length, 
+#   col=c("red","blue","green")[seedt$spp], type="s", size=1)
+# use this for rotatable 3D plot
+@
+
+We see that the blue (brma) seeds have more variance than the other two. Additional 3D plots make the issue more evident. The orientation of the scatter also differs, particularly between brma and the other two. We need to use a quadratic discriminant function.
+
+For this exercise, we ignore the obvious outliers and heterogeneity of variance within groups. For a stricter analysis we would try transformations to obtain homogeneity of variance.
+
+<<seedda2>>=
+library(MASS)
+qseed <- qda(x=seedt[,2:7], grouping=seedt$spp,
+             prior=c(1,1,1)/3)
+qseed
+str(qseed)
+# Get the predictions and posterior 
+# probabilities for the training data
+seed.s <- qda(x=seedt[,2:7], grouping=seedt$spp,
+              prior=c(1,1,1)/3, CV=TRUE)
+# Consolidate and check error rates in the training data
+seedt <- cbind(seedt, "class"=seed.s$class, seed.s$posterior)
+xtabs(~ spp + class, seedt)
+(1/3)*(12/91) + (1/3)*(2/107) + (1/3)*(21/83)
+@
+
+
+\subsection{Estimate the error rate. [25]}
+
+Use the data held out and the same method used in the iris example.
+
+<<seedda3>>=
+qd.pred <- predict(qseed, newdata=seedv[,2:7], method="debiased")
+# Consolidate and check error rates
+seedv <- cbind(seedv, "class"=qd.pred$class, qd.pred$posterior)
+xtabs(~ spp + class, seedv)
+(1/3)*(8/21) + (1/3)*(0/17) + (1/3)*(3/11) 
+# error rate in population with equal proportion of seeds.
+@
+
+As expected, the overall error rate is greater than in the training data.
+
+\subsection{What is a prior probability? Explain it in your words. You can use an example. [25]}
+
+In the case of discriminant analysis, the prior probability is the best estimate of the proportion of each category present in the population to be classified. This probabilities should integrate everything we know about the identity or class of a seed taken at random from te population PRIOR to looking or measuring the seed. In the WW and BB urns example from the notes, the prior probability is 0.5, because we specified that pick one of two urns randomly with equal probability.
+
+The term prior refers to what is known BEFORE the sample is measured.
+
+\subsection{Determine your expected overall error rate when using the wrong priors. [25]}
+
+In a sample of 1000 seeds there are 50 lomu, 50 brho, and 900 brma, but you assume that priors are equal.
+
+<<seedda4>>=
+# Using the wrong priors; use the following confusion matrix:
+xtabs(~ spp + class, seedv)
+(1/3)*(8/21) + (1/3)*(0/17) + (1/3)*(3/11) 
+# error rate in population with equal proportion of seeds.
+
+qseed2 <- qda(x=seedt[,2:7], grouping=seedt$spp,
+        prior=c(0.05, 0.90, 0.05))
+qp2 <- predict(qseed2, newdata=seedv[,2:7],
+      method="debiased", priors=c(0.05, 0.90, 0.05)) #
+seedv <- cbind(seedv, "class2"=qp2$class)
+xtabs(~ spp + class2, seedv) # no change in conditional error rate
+(50/1000)*(8/21) + (900/1000)*(0/17) + (50/1000)*(3/11)
+@
+
+In this case, the change in the priors does not change the confusion matrix, but it affects the estimation of the total error rate, because the class brma is more frequent and when we classify a brma we make fewer mistakes than on average. The correct priors should be applied to develop the discriminant and to estimate the total error rate.
+
+
+\end{document}
+
+
+qseed3 <- qda(x=seedt[,2:7], grouping=seedt$spp,
+        prior=c(0.8999, 0.10, 0.0001))
+qp3 <- predict(qseed3, newdata=seedv[,2:7],
+      method="debiased", priors=c(0.8999, 0.10, 0.0001))
+      
+xtabs(~seedv$spp + qp3$class)
+      
+      

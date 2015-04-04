@@ -1,0 +1,15 @@
+{
+    "contents" : "# MODEL DEVELOPMENT Spartina dataset\n# read the data into R using the .csv file with headers\nsp<-read.csv(\"../Examples/spartina.csv\", header=T)\n#\n# load the leaps package to do regression subsets\nlibrary(leaps)\n#\n# In one line, run all possible subsets with up to 14 predictors\n# recording the best 3 models for each number of predictors, and\n# create the summary object \"apm\" that contains the information\n# necessary to compare the models and pick one.\napm<-summary(best3<-regsubsets(bmss~sal+pH+K+Na+Zn+H2S+Eh7+acid+P+Ca+Mg+Mn+Cu+NH4, data=sp, nbest=3, nvmax=14, method=c(\"exhaustive\")))\n#\nplot(apm$cp~1+as.numeric(rownames(apm$which)), xlab=\"p+1\", ylab=\"Mallow's Cp\") # plot the Cp agains the row index -note groups of 3\nplot(apm$cp~1+as.numeric(rownames(apm$which)), ylim=c(1.5,15)) # expand to see individual points\ncbind(1+as.numeric(rownames(apm$which)),apm$cp) # compare Cp and p+1 by looking at numbers\nplot(apm$adjr2~1+as.numeric(rownames(apm$which)), xlab=\"p+1\", ylab=\"Adjusted R-sq\") # plot the Cp agains the row index -note groups of 3\n\napm$which # print the list of variables in each model\n#\ncoef(best3, 1:40) # extract the model coefficients for all 40\n#\ncoef(best3,c(7,10)) # or for just models 7 and 10\n#\n# look for additional methods for resubsets and associated objects\n\nhelp(regsubsets)\n\n\napm$which[which.min(apm$bic),] #retrieves the list of variables in the best model according to the BIC criterion\n\n# get the summary for only the best model for each p\napm1<-summary(best1<-regsubsets(bmss~sal+pH+K+Na+Zn+H2S+Eh7+acid+P+Ca+Mg+Mn+Cu+NH4, data=sp, nbest=1, nvmax=14, method=c(\"exhaustive\")))\n\np<-c(2:15) # create a vector for p = number of parameters\n\nAICc<-apm1$bic - p*log(45) + 2*p + 2*p*(p+1)/(45-p-1) # calculate AICc\n\nplot(p,AICc) # plot the AIC vs. p\n\ncoef(best1,which.min(AICc)) # get the coefficients for best model\n\nthebest<-lm(bmss~sal + K + Zn + Eh7 + Cu + NH4, data=sp) # make best model\n\nsummary(thebest) # inspect results\n\nxvals<-as.data.frame(t(mean(sp[,c(4:17)]))) # calculate average predictor values, transpose and put into data frame for prediction\n\npredict(thebest, xvals, interval=\"prediction\", level=0.90, se=T) # make prediction for individual observation with alpha=0.90\n\npredict(thebest, xvals, interval=\"confidence\", level=0.90, se=T) # make prediction for mean bmss with alpha=0.90\n\nfull<-lm(bmss~sal+pH+K+Na+Zn+H2S+Eh7+acid+P+Ca+Mg+Mn+Cu+NH4, data=sp) # make full model\n\npredict(full, xvals, interval=\"prediction\", level=0.90, se=T) # make prediction for individual observation with alpha=0.90\n\npredict(full, xvals, interval=\"confidence\", level=0.90, se=T) # make prediction for mean bmss with alpha=0.90\n\nplot(thebest) # plot residuals for best model",
+    "created" : 1350569578184.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2823325066",
+    "id" : "45C9D686",
+    "lastKnownWriteTime" : 1350571528,
+    "path" : "~/Documents/TeachServ/CLASSES/AGR206/PLS206F10/RstudioPLS206/spaRtina.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

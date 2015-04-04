@@ -1,0 +1,112 @@
+\documentclass{article}
+
+\usepackage{Sweave}
+\begin{document}
+\HeaderA{qq.plot}{Quantile-Comparison Plots}{qq.plot}
+\methaliasA{qq.plot.default}{qq.plot}{qq.plot.default}
+\methaliasA{qq.plot.glm}{qq.plot}{qq.plot.glm}
+\methaliasA{qq.plot.lm}{qq.plot}{qq.plot.lm}
+\aliasA{qqp}{qq.plot}{qqp}
+\keyword{distribution}{qq.plot}
+\keyword{univar}{qq.plot}
+\keyword{regression}{qq.plot}
+\begin{Description}\relax
+Plots empirical quantiles of a variable, or of studentized residuals from
+a linear model, against theoretical quantiles of a comparison distribution.
+\end{Description}
+\begin{Usage}
+\begin{verbatim}
+qq.plot(x, ...)
+
+qqp(...)
+
+## Default S3 method:
+qq.plot(x, distribution="norm", ylab=deparse(substitute(x)),
+        xlab=paste(distribution, "quantiles"), main=NULL, las=par("las"),
+        envelope=.95, labels=FALSE, col=palette()[2], lwd=2, pch=1, cex=1,
+        line=c("quartiles", "robust", "none"), ...)
+
+## S3 method for class 'lm':
+qq.plot(x, main=NULL, xlab=paste(distribution, "Quantiles"), 
+  ylab=paste("Studentized Residuals(", deparse(substitute(x)), ")",
+    sep = ""), 
+  distribution=c("t", "norm"), line=c("quartiles", "robust", "none"), 
+  las=par('las'), simulate=FALSE, envelope=0.95, labels=names(rstudent), 
+  reps=100, col=palette()[2], lwd=2, pch=1, cex=1, ...)
+\end{verbatim}
+\end{Usage}
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector of numeric values or \code{lm} object.
+\item[\code{distribution}] root name of comparison distribution -- e.g., \code{norm} for the
+normal distribution; \code{t} for the t-distribution.
+\item[\code{ylab}] label for vertical (empirical quantiles) axis.
+\item[\code{xlab}] label for horizontal (comparison quantiles) axis.
+\item[\code{main}] label for plot.
+\item[\code{envelope}] confidence level for point-wise confidence envelope, or 
+\code{FALSE} for no envelope.
+\item[\code{labels}] vector of point labels for interactive point identification,
+or \code{FALSE} for no labels.
+\item[\code{las}] if \code{0}, ticks labels are drawn parallel to the
+axis; set to \code{1} for horizontal labels (see \code{\LinkA{par}{par}}).
+\item[\code{col}] color for points and lines; the default is the \emph{second} entry
+in the current color palette (see \code{\LinkA{palette}{palette}}
+and \code{\LinkA{par}{par}}).
+\item[\code{pch}] plotting character for points; default is \code{1} 
+(a circle, see \code{\LinkA{par}{par}}).
+\item[\code{cex}] factor for expanding the size of plotted symbols; the default is
+\code{1}.
+\item[\code{lwd}] line width; default is \code{2} (see \code{\LinkA{par}{par}}).
+Confidence envelopes are drawn at half this line width.
+\item[\code{line}] \code{"quartiles"} to pass a line through the quartile-pairs, or
+\code{"robust"} for a robust-regression line; the latter uses the \code{rlm}
+function in the \code{MASS} package. Specifying \code{line = "none"} suppresses the line.
+\item[\code{simulate}] if \code{TRUE} calculate confidence envelope by parametric bootstrap;
+for \code{lm} object only. The method is due to Atkinson (1985).
+\item[\code{reps}] integer; number of bootstrap replications for confidence envelope.
+\item[\code{...}] arguments such as \code{df} to be passed to the appropriate quantile function.
+\end{ldescription}
+\end{Arguments}
+\begin{Details}\relax
+Draws theoretical quantile-comparison plots for variables and for studentized residuals
+from a linear model. A comparison line is drawn on the plot either through the quartiles
+of the two distributions, or by robust regression. 
+
+Any distribution for which quantile and
+density functions exist in R (with prefixes \code{q} and \code{d}, respectively) may be used. 
+Studentized residuals are plotted against the
+appropriate t-distribution.
+
+The function \code{qqp} is an abbreviation for \code{qq.plot}.
+\end{Details}
+\begin{Value}
+\code{NULL}. These functions are used only for their side effect (to make a graph).
+\end{Value}
+\begin{Author}\relax
+John Fox \email{jfox@mcmaster.ca}
+\end{Author}
+\begin{References}\relax
+Fox, J. (1997)
+\emph{Applied Regression, Linear Models, and Related Methods.} Sage.
+
+Atkinson, A. C. (1985)
+\emph{Plots, Transformations, and Regression.} Oxford.
+\end{References}
+\begin{SeeAlso}\relax
+\code{\LinkA{qqplot}{qqplot}}, \code{\LinkA{qqnorm}{qqnorm}},
+\code{\LinkA{qqline}{qqline}}
+\end{SeeAlso}
+\begin{Examples}
+\begin{ExampleCode}
+x<-rchisq(100, df=2)
+qq.plot(x)
+qq.plot(x, dist="chisq", df=2)
+
+qq.plot(lm(interlocks~assets+sector+nation, data=Ornstein), sim=TRUE)
+\end{ExampleCode}
+\end{Examples}
+
+
+
+
+\end{document}

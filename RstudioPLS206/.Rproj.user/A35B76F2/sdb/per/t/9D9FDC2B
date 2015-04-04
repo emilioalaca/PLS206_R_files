@@ -1,0 +1,16 @@
+{
+    "contents" : "# =============== Bootstrapping PCA =====================\n# =============== Read and prepare data, load packages ==========\n\nspart <- read.csv(\"../Examples/spartina.csv\", header=TRUE)\nstr(spart)\nlibrary(boot)\n\n\n# ============ create function to return statistics of interest ========\npca4boot <- function(data, i) {\n  data.i <- data[i,]\n  pca.i <- prcomp(data.i[,4:17], scale.=T)\n  eval1 <- pca.i$sdev[1]^2\n  load.Zn.pc1 <- abs(cor(data[,8],pca.i$x[,1]))\n  load.Zn.pc2 <- abs(cor(data[,8],pca.i$x[,2]))\n  result <- c(eval1,load.Zn.pc1,load.Zn.pc2)\n  return(result)\n}\n\n# =========== perform bootstrapping and request CI's ==================\n\nboot.results <- boot(spart,pca4boot,1999)\nboot.ci(boot.results, index=1:2)\nboot.ci(boot.results, index=2)\nplot(density(boot.results$t[,1]))\nplot(density(boot.results$t[,2]))\nplot(density(boot.results$t[,3]))\nhist(boot.results$t[,2])\nhist(boot.results$t[,3])\n\n# ============== what is going on with the loadings!?? ============\nfun1 <- function(data) {\n  data.i <- data[sample(1:dim(data)[1], replace=TRUE),]\n  pca.i <- prcomp(data.i[,4:17], scale.=T)\n  eval1 <- pca.i$sdev[1]^2\n  load.Zn.pc1 <- abs(cor(data[,8],pca.i$x[,1]))\n  load.Zn.pc2 <- abs(cor(data[,8],pca.i$x[,2]))\n  result <- c(eval1,load.Zn.pc1,load.Zn.pc2)\n  return(result)\n}\n\nfun1(spart)",
+    "created" : 1350569250737.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2292816553",
+    "id" : "9D9FDC2B",
+    "lastKnownWriteTime" : 1353873324,
+    "path" : "~/Documents/TeachServ/CLASSES/AGR206/PLS206F10/RstudioPLS206/bootPCA.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

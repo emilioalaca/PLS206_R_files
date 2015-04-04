@@ -1,0 +1,17 @@
+spart<-read.csv("spartina.csv", header=TRUE)
+spart
+prcomp(spart[,4:17], scale.=true)
+prcomp(spart[,4:17], scale.=TRUE)
+pc14<-prcomp(spart[,4:17], scale.=TRUE)
+pc14
+pc14$sdev
+pc14$sdev^2
+pc14[,1]
+var(predict(pc14)[,1])
+par(mfrow=c(2,2))
+biplot(pc14)
+plot(pc14,main="")
+plot(pc14[,1]~pc14[,2])
+plot(predict(pc14)[,1]~predict(pc14)[,2])
+plot(predict(pc14)[,1]~predict(pc14)[,2])
+plot(predict(pc14)[,1]~predict(pc14)[,2])

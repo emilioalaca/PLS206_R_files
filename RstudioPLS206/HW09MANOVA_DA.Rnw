@@ -1,0 +1,190 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mdwlist}
+\usepackage[inner=3cm,outer=4cm]{geometry}
+\usepackage{mathtools}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Homework 09. Discriminant Analysis and MANOVA. PLS206 Fall 2014}
+\author{Emilio A. Laca and Matt Espe}
+\maketitle
+
+
+\section {Discriminant Analysis}
+\subsection{Instructions}
+Use the file seedDA.txt. These are data on the dimensions of seeds from three species, \emph{Bromus hordeaceous}, \emph{Bromus madritensis} and \emph{Lolium multiflorum}. It is known that there are no other seeds in the mixtures. Exclude the rows where hold.out=1 and develop a discriminant rule based on all morphological variables with the remaining rows.
+
+\begin{description*}
+  \item[spp] species of seed.
+  \item[area] area of seed projection ("shadow").
+  \item[perimeter] perimeter of seed projection mm.
+  \item[length] seed length mm.
+  \item[width] seed width mm.
+  \item[area.per] area:perimeter ratio.
+  \item[len.wid] length:width ratio.
+  \item[hold.out] 1 = hold.out sample, 0 = training sample.
+\end{description*}
+
+
+\subsection{Homogeneity of variance [10]}
+Determine if there is heterogeneity of variance covariance by using a couple of 3D plots. Report the plots using a couple of suitable perspectives.
+
+The first chunk of code loads the necessary packages, read the data and adds residuals to the data file.
+<<>>=
+library(MASS)
+library(rgl)
+library(klaR)
+library(candisc)
+library(rpart)
+
+seeds <- read.csv("../Examples/seedDA.txt", header=TRUE)
+tseeds <- split(seeds, seeds$hold.out)[[1]]
+vseeds <- split(seeds, seeds$hold.out)[[2]]
+mvres <- as.data.frame(residuals(manova(cbind(area,perimeter,length,width,area.per,len.wid) ~ spp, tseeds)))
+names(mvres) <- paste(names(mvres),".r", sep="")
+tseeds <- cbind(tseeds, mvres)
+colors <- c("blue", "green", "orange")
+tseeds$color <- factor(tseeds$spp, labels = colors)
+@
+
+<<>>=
+tseeds.by.spp <- split(tseeds, tseeds$spp)
+# calculate covariances for ellipses
+tseeds.cov <- lapply(tseeds.by.spp, function(x) cov(x[,c(11,12,14)]))
+ # calculate centroids for ellipses
+tseeds.means <- lapply(tseeds.by.spp, function(x) colMeans(x[,c(4,5,7)]))
+# plot residuals
+with(tseeds, plot3d(length.r, width.r, len.wid.r,  type = "s", col = color, size = 1))
+# add ellipses to residuals
+sapply(seq_along(tseeds.cov), function(i) plot3d(ellipse3d(tseeds.cov[[i]]), 
+       col = colors[i], alpha = 0.4, add = TRUE))
+@
+
+The 3D plots show that the green hyperellipsoid for \emph{B. adritensis} is larger than and has orientation different from the other two specie. Therefore, a quadratic discriminant function may work better than the linear one.
+
+\subsection{Discriminant analysis [10]}
+
+Use a linear or quadratic discriminant function according to your assessment. Set prior probabilities to be equal.
+We use a quadratic discriminant. Once the discriminant is calculated we can display the regions for classification in a graphical form. We use partition plots from the \verb!klaR! package.
+
+<<fig=TRUE>>=
+qseeds <- qda(x = tseeds[,2:7], 
+              grouping = tseeds$spp,
+              prior = c(1, 1, 1) / 3)
+qseeds
+partimat(spp ~ area+perimeter+length+width+area.per+len.wid, tseeds, method="qda")
+@
+
+\subsection{Canonical plots and loadings [10]}
+Report the discriminant plot using the first two canonical variables and indicate what original variables are related to canonical 1 and 2 by using the correlations (loadings) with the original variables.
+
+For this part we need to use the linear discriminant for simplicity. Canonical variates are not easiluy defined or calculated in quadratic discriminant analysis.
+
+<<fig=TRUE>>=
+library(candisc)
+mvmod <- lm(cbind(area,perimeter,length,width,area.per,len.wid) ~ spp, tseeds)
+summary(mvmod)
+mvmod
+cd.mvmod <- candisc(mvmod)
+# biplot ob observations and canonical variates
+plot(cd.mvmod)
+can1 <- cd.mvmod$scores$Can1
+can2 <- cd.mvmod$scores$Can2
+# extract canonical variables from candisc object
+cor(cbind(can1,can2),tseeds[,2:7])
+@
+
+The canonical plot shows that most of the differences are between brma and the other two species. Brma tended to have longer and narrower seeds than brho and lomu. Lomu and brho difered mainly in area. The first canonical variable was higly correlated with length and length: width ration, whereas the second canonical variable was negatively correlated with area:perimeter ratio and area.
+
+\subsection{Error rate [10]}
+
+Estimate the error rate using the data held out with the same method used in the iris example.
+
+<<>>=
+qd.pred <- predict(qseeds, newdata = vseeds[,2:7],
+                    method = "debiased", prior = c(1/3,1/3,1/3))
+xtabs(~ vseeds$spp + qd.pred$class)
+@
+
+The probability of error depends on the true species. For example, no errors are made when the true seeds is brma, but some brho and lomu are misclassified. Thus, the relative proportions of the species in the population being classified affects the effective error rate. Assuming seeds are present in equal proportions, overall the error rate is (0.333*7 + 0.333*3)/50.
+
+\subsection{Prior probabilities. [10]}
+What is a prior probability? Explain it in your words. You can use an example.
+
+The prior probabilities for a classification problem are the probabilities of randomly obtaining objects of each class. For example, the prior for brho would be the probability of ontaining a brho seed. If the seed is obtained at random from the population of seeds, it is reasonable to assume that the probability is proportional to the relative abundance of the seed.
+
+\section{MANOVA}
+
+A study was conducted to determine if plants of a species (from seeds collected in different regions) show evidence of adaptation. Seeds of Phytus imaginarius were collected both at a variety of sites in the Great Basin deserts and in many sites in the intermediate elevations of the Sierra Nevada (ecotypes). A random set of seeds from each origin (ecotype) is allocated to each of three growing environments (location), desert, mountain, and greenhouse. Ten independent plants are grown in each of the 6 cells resulting from the origin x growing environment combinations. For each plant, the peak standing crop (g dry mass) and number of seeds produced are measured at the end of the growing season.
+
+\subsection{MANOVA tests [10]}
+
+Perform a MANOVA to determine if there are any differences due to ecotype, location or interaction. Report the table with significance of effects. Use Wilk's lambda.
+
+<<>>=
+phytus <- read.csv("../Examples/phytus.txt", header=TRUE)
+library(car) # to be able to use Manova()
+library(candisc)
+mlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)
+MVmlm1 <- Manova(mlm1)
+summary(MVmlm1)
+@
+
+The output shows that all model terms are significant according to Wilks test. Because the interaction between ecotype and location is significant, it is necesary to inspect all six means. Note that the summary of the Manova object also shows the E matrix and the partition of the H matrix into its orthogonal (additive) components: ecotype, location and ecotype:location.
+
+\subsection{Separation of groups [10]}
+
+Determine which groups differ from each other by inspection of the canonical plots (plot of a \verb!candisc()! object). Remember that when there are significant interactions, you have to compare each combination of factors. Thus, when using candisc(), specify term = "ecotype:location."
+
+<<fig=TRUE>>=
+candi.ecoloc <- candisc(mlm1, term="ecotype:location")
+plot(candi.ecoloc)
+@
+
+Based on the plot, which includes the 95 percent confidence circles for the centroids, it appears that with the potential exception of ecotype basin in locations mountain and greenhouse, all other differences are significant. These data were simulated to represent a prototypical genotype-environment interaction where a genotype specialized in an extreme environment (basin) cannot respond to improved conditions as much as one adapted to a more mesic environment.
+Because there are only two response variables, there are just two canonical variables. By far, most of the differences among means are explained by Can1, the first canonical variable. According to the biplot, Can1 seems to represent mostly the variable seeds, but it is also correlated positively with peaksc.
+
+\subsection{Exploration of the interaction [10]}
+
+Save the Canonical 1 for the interaction. Analyze it using an lm() where Canonical 1 is the response and origin, location and origin*location are the effects. Report a plot of Canonical 1 vs. origin for each location.
+<<fig=TRUE>>=
+candi.ecoloc.scores <- candi.ecoloc$scores
+lm1 <- lm(Can1 ~ ecotype*location, candi.ecoloc.scores)
+summary(lm1)
+anova(lm1)
+library(ggplot2)
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =c("1desert","2mountain","3greenhouse"))
+dplot <-cbind(newdata, Can1=predict(lm1,newdata), se=predict(lm1,newdata, se.fit=TRUE)$se.fit)
+
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype, group=ecotype)) +
+  geom_point(aes(shape=ecotype), size=4) +
+  geom_line(aes(linetype=ecotype), size=2) +
+  geom_errorbar(aes(ymax=Can1+se, ymin=Can1-se), width=0.1)
+  labs(x = "location", y = "Predicted Can1")
+@
+
+Note that the residual variance, estimated by the MSE of Can1 is equal to 1. This is the same for all canonical variables in MANOVA, because they are scaled such that their residual variance is 1. The plot of the canonical 1 for the interaction clearly shows the "textbook" norm of reaction of a genotype by environment interaction.
+
+\subsection{Interpret interaction [10]}
+
+Interpret the interaction by using the plot from the previous question and the correlations between Canonical 1 and the original response variables. These correlations tell you which variables are represented in Canonical 1 and how. Report them.
+
+<<>>=
+cor(phytus[,3:4],candi.ecoloc.scores[,3:4])
+@
+
+Canonical1 is highly correlated with seeds, and Canonical 2 is related to peaksc. However, all correlations are positive. Thus, it appears that most of the interaction effects are due to changes in the number of seeds produced. When grown in desert conditions, the basin ecotype exhibits local adaptation and produces more seeds than the sierra ecotype. In better environments, the sierra ecotype performs a lot better than basin, showing ability to exploit more humid and stable environments like the greenhouse.
+
+\subsection{What variables appear to explain the differences?  [10]}
+
+Use the centroid plot to determine which -if any- response variable is more responsible for the interaction effects.
+
+The number of seeds produced seems to be the main response variable behind the multivariate differences among the treatment combinations. Again, seeds is almost perfectly aligned with the string of centroids, with the exception that the difference (not significant) between basin greenhouse and basin mountain is more related to difference in peak standing crop.
+
+
+
+
+\end{document}

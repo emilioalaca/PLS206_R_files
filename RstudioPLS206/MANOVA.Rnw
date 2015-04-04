@@ -1,0 +1,36 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{MANOVA. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+\maketitle
+\SweaveOpts{concordance=TRUE}
+\section*{Concept and elements}
+
+<<manova1>>=
+ddig <- read.csv("../Examples/digMANOVA.dat", header=TRUE)
+str(ddig)
+ddig$animal <- factor(ddig$animal)
+# options(contrasts =c("contr.treatment", "contr.poly"))
+man1 <- manova(cbind(dmd,ndfd,adfd,cellud) ~ diet, ddig)
+str(man1)
+(sum.man1 <- summary(man1, test="Wilks"))
+str(sum.man1)
+@
+
+<<canonical1>>=
+library(car)
+Anova(man1,test="Wilks")
+library(candisc)
+man1.can1 <-candisc(man1, term="diet")
+plot(man1.can1)
+ 
+library(heplots)
+heplot3d(man1.can1, scale=6, fill=TRUE)
+
+@
+
+
+\end{document}

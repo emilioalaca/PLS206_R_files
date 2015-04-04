@@ -1,0 +1,6 @@
+library(vegan)
+library(MASS)
+data(varespec)
+summary(varespec)
+vare.dis <- (vegdist(varespec))
+vare.mds0(isoMDS)

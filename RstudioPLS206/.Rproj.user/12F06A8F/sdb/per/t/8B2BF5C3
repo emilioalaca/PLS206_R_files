@@ -1,0 +1,16 @@
+{
+    "contents" : "#phytusMANOVA\nphytus <- read.csv(\"../Examples/phytus.txt\", header=TRUE)\nlibrary(car)\nlibrary(candisc)\nmlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)\nMVmlm1 <- Manova(mlm1)\nsummary(MVmlm1)\ncandi.eco <- candisc(mlm1, term=\"ecotype\")\nplot(candi.eco)\ncandi.loc <- candisc(mlm1, term=\"location\")\nplot(candi.loc)\ncandi.ecoloc <- candisc(mlm1, term=\"ecotype:location\")\nplot(candi.ecoloc)\nheplot(mlm1)\ncandi.ecoloc.scores <- candi.ecoloc$scores\nstr(candi.ecoloc.scores)\n",
+    "created" : 1418410898809.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1429645025",
+    "id" : "8B2BF5C3",
+    "lastKnownWriteTime" : 1418403938,
+    "path" : "~/Google Drive/PLS206F13/RstudioPLS206/phytusManova.R",
+    "project_path" : "phytusManova.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

@@ -1,0 +1,46 @@
+\documentclass{tufte-book}
+\usepackage{graphicx}
+\usepackage{lipsum}
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+% Prints a trailing space in a smart way.
+\usepackage{xspace}
+
+
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\newcommand{\tthdump}[1]{#1}
+\usepackage{makeidx}
+\makeindex
+
+\title{My title}
+
+\begin{document}
+\setkeys{Gin}{width=1.1\marginparwidth} %% Sweave
+
+ \section{Where I get both funky and fresh}
+<<make some randomness>>=
+  set.seed(12)
+  t <- rnorm(100)
+@
+and an example plot
+\begin{center}
+<<fig=TRUE,echo=FALSE>>=
+  plot(density(t))
+@
+\end{center}
+
+%% a margin figure
+<<a, fig=FALSE, echo=FALSE>>=
+plot(density(t))
+@ 
+\begin{marginfigure}
+<<fig=TRUE, echo=FALSE>>=
+<<a>>
+@   
+\end{marginfigure}
+
+This is a very simple example of how we might get started with Sweave. You know what comes next, right? That's right... Lorem Ipsum, ladies! 
+\lipsum
+
+\end{document}

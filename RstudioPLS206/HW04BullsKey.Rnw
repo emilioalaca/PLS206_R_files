@@ -1,0 +1,183 @@
+\documentclass[letterpaper]{article}
+\newcounter{qcounter}
+\usepackage[nogin]{Sweave}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\parskip 7.2pt
+
+\title{Homework 04 Key. PLS206 Fall 2014}
+\author{Emilio A. Laca}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+
+{\bf \Large Regression diagnostics and remedial measures}
+
+Use the Bulls.txt data file. The homework consists in checking the assumptions and proposing remedial measures for the regression of SalePr on all the other variables EXCEPT Breed. For this exercise we are using the data as if the goal were to predict bull sale price based on a series of measurable characteristics of animals. Although the goal is prediction, we will be concerned about collinearity because it can inflate the PRESS and reduce the actual precision of predictions for bulls that were not included in the data used to develop the model. Keep in mind that for the application in a "real-world" situation one would not need to predict the sale price for bulls used to develop the model. Sale prices for those bulls are known, albeit with measurement and process error. 
+
+Use the class notes file PLS206Ch08MLR3.docx to guide your work and the pdf file found in http://www.sagepub.com/upm-data/38503_Chapter6.pdf and PLS206Ch04assumpSS.docx to interpret results.
+\begin{list}{ \bf \arabic{qcounter}. }{\usecounter{qcounter}}
+
+
+{\item \bf Do a multiple linear regression of SalePr on YrHgt, FtFrBody, PrctFFB, Frame, BkFat, SaleHt and SaleWt}
+
+Report the minimum output to support your tests. For each test required in each question below, make sure to list remedial measures that can address problems identified. If no remedial measure is required, state so. Do not  apply remedial measures unless you are specifically asked to do it.
+
+<<label=bulls1>>=
+bulls <- read.csv("~/Documents/Bulls.txt", header=TRUE)
+names(bulls)
+
+bull1 <- lm(SalePr ~ YrHgt + FtFrBody + PrctFFB + Frame + BkFat
+            + SaleHt + SaleWt, bulls)
+summary(bull1)
+@
+
+{\item \bf Test the assumption of normality. [10]}
+<<label=normal>>=
+library(car)
+shapiro.test(residuals(bull1))
+@
+<<label=figqqplot,include=FALSE>>=
+qqPlot(bull1, main="QQ Plot") #qq plot for studentized resid
+@
+Both the Shapiro-Wilk test and the quantile plot show a significant lack of normality.
+
+
+\begin{figure}
+\begin{center}
+<<label=figqq,fig=TRUE, width=4, height=4,echo=FALSE>>=
+<<figqqplot>>
+@
+\end{center}
+\caption{Quantile plot of residuals to test for normality. There is a significant deviation from normality.}
+\label{fig:qq}
+\end{figure}
+
+{\item \bf Test the homogeneity of variance. In addition to other potential checks, use Breed as grouping variable. [10]}
+
+<<label=residualPlots, include=FALSE, echo=FALSE>>=
+residualPlots(bull1)
+@
+
+\begin{figure}
+\begin{center}
+<<label=figHov,fig=TRUE,echo=FALSE>>=
+<<residualPlots>>
+@
+\end{center}
+\caption {Residuals are plotted against each predictor and fitted values to assess homogeneity of variance.}
+\end{figure}
+
+<<label=hovtest>>=
+library(HH)
+hov(residuals(bull1)~as.factor(Breed), bulls)
+@
+
+{\item \bf Test the independence of errors. Assume data were obtained sequentially at equal intervals in the order they appear. [10]}
+
+Because the temporal sequence of residuals is known, we can use the Durbin-Watson statistic to determine if there is a significant correlation between residuals. The dwt() function does the test and reports the first-order autocorrelation and the significance.
+
+<<label=dwt>>=
+dwt(bull1)
+@
+{\item \bf Inspect the leverage plots to test for linearity. [10]}
+
+<<label=avPlots,fig=FALSE,echo=FALSE>>=
+avPlots(bull1)
+@
+
+\begin{figure}
+\begin{center}
+<<label=avPlotsb,fig=TRUE, height=6, width=6, echo=FALSE>>=
+<<avPlots>>
+@
+\end{center}
+\caption {Added-variable plot are similar to leverage plots and convey the same information.}
+\end{figure}
+
+
+{\item \bf Use the hats and the jackknifed distance to determine if there are outliers in the X dimension. [10]}
+<<label=oultiers>>=
+critical.hat <- 2*(length(coef(bull1)))/
+  (df.residual(bull1) + length(coef(bull1)))
+bulls[which(hatvalues(bull1)>critical.hat),]
+@
+Observations 16 and 51 appear to be outliers in the X dimension using the method for fixed X's. In this case, the X's are actually random variables, because they were not manipulated or selected to have any specific values. It is more appropriate to use the jackknifed distances to determine if there are extreme outliers.
+
+<<label=jackout>>=
+X <- bulls[,3:9] # give x's a short name so it looks neat
+library(bootstrap) # load package that has jackknife()
+theta<-function(x,xdata) # define function to get distance
+{mahalanobis(xdata[-x,],colMeans(xdata[x,]), cov(xdata[x,]))}
+jackD2<-jackknife(1:dim(X)[1], theta, X)
+which(jackD2$jack.values > qchisq(p = 1-0.05/dim(bulls)[1], df = length(coef(bull1))))  #compare with Chi-square
+qqPlot(jackD2$jack.values,distribution="chisq", df=ncol(X))
+@
+
+Observation 51 is a significant outlier in the X dimension. In order to determine the nature of the observation deviation from the rest, we can look at the scatterplots of the X variables.
+
+<<label=scatterp, fig=FALSE, echo=FALSE>>=
+pairs(bulls[,3:9], panel = function(x,y) text(x,y, labels=1:76))
+@
+
+
+\begin{figure}
+\begin{center}
+<<label=scatter, fig=TRUE, width=6, height=6>>=
+<<scatterp>>
+@
+\end{center}
+\end{figure}
+
+{\item \bf Determine if there is excessive collinearity. [10]}
+<<label=vif>>=
+vif(bull1)
+@
+
+There are several variance inflation factors that are troublesome. Some of them are greater than 10 and require remedial action. Excessive collinearity increases the variance of estimated $\boldsymbol\beta$ and indicates that there are redundant variables in the predictors. Variable selection is a possible remedial measure if we are interested in obtaining good estimates of $\boldsymbol\beta$, or if we need a model that makes good predictions even near the boundary of the space covered by the predictors. 
+
+{\item \bf Use the leaps package to select a good reduced model as necessary. [10]}
+
+<<label=goodModel>>=
+library(leaps)
+(apm1 <- summary(
+  best1<-regsubsets(SalePr ~ YrHgt + FtFrBody + PrctFFB 
+                    + Frame + BkFat + SaleHt + SaleWt, 
+                    data=bulls, nbest=1, nvmax=7,
+                    method=c("exhaustive"))))
+plot(apm1$bic) # lowest is best
+which(apm1$which[which(apm1$bic==min(apm1$bic)),])
+bull2 <- update(bull1, . ~ FtFrBody + Frame + BkFat + SaleHt)
+summary(bull2)
+vif(bull2)
+@
+
+With the reduced set of predictors the model is actually better, although the $R^2$ may have declined a bit. For example, the standard error of the coefficient for Frame declined by a factor of about 0.5. 
+
+{\item \bf Obtain the estimated coefficients for the new model and their standard errors. Interpret the first coefficient. [10]}
+
+<<label=coefs>>=
+coef(bull2)
+@
+
+The first coefficient is the intercept, which has little meaning because it would be the sale price fetched by a bull with height=0, fat free bodymass=0, no frame, and no back fat! So we interpret the first slope, the coefficient that multiplies FtFrBody. For each increase of 1 unit in fat free body mass, the sale price declined by 2.7452 units. This may be counter intuitive and known to be incorrect in terms of cause and effect, but the "configuration" of the data results in such coefficient. It may be worth checking if the second-best model is a better match to prior knowledge and more sensible.
+
+{\item \bf Perform a k-fold validation. Report your choice of k, the overall MSE and compare with the original MSE.  [20]}
+
+For a k-fold cross-validation the data are subdivided randomly into k subsets or "folds." Each fold is removed from the data in turn. The model is fitted and predictions are made for the fold held out. The process is repeated for each fold.
+
+There are 78 observations and we are using four predictors. Each subset or fold should have at least 24 observations, so a choice of k=3 is reasonable.
+
+<<label=cval, fig=TRUE, height=4, width=6>>=
+library(DAAG)
+my.cval <- cv.lm(df=bulls, bull2, m=3, seed=floor(1000*runif(1)))
+(mspr <- attr(my.cval,"ms")) #extract the overall MSE for cv.
+(mse.bull2 <- deviance(bull2)/df.residual(bull2))
+anova(bull1,bull2)
+@
+
+The difference between the mean squares of the errors are small. The comparison of models indicates that they are not significantly different. Using the principle of parsimony, we prefer the simpler model, which does not have extreme collinearity.
+\end{list}
+\end{document}

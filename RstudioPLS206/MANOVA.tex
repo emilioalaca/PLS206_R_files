@@ -1,0 +1,173 @@
+\documentclass{article}
+
+\usepackage{Sweave}
+\begin{document}
+\input{MANOVA-concordance}
+
+\title{MANOVA. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+\maketitle
+
+\section*{Concept and elements}
+
+\begin{Schunk}
+\begin{Sinput}
+> ddig <- read.csv("../Examples/digMANOVA.dat", header=TRUE)
+> str(ddig)
+\end{Sinput}
+\begin{Soutput}
+'data.frame':	24 obs. of  6 variables:
+ $ animal: int  578 583 589 594 599 577 580 585 591 576 ...
+ $ diet  : Factor w/ 5 levels "AA","AO","MM",..: 1 1 1 1 1 2 2 2 2 3 ...
+ $ dmd   : num  64.8 62.5 62.1 64.9 68.8 57.9 63.3 60 59.3 61.4 ...
+ $ ndfd  : num  49.2 46.7 44 49.2 54.5 43.8 51.3 48.9 45.5 33.5 ...
+ $ adfd  : num  47.8 43.6 42.2 46.7 52.1 43.6 50.1 45.5 43.8 44 ...
+ $ cellud: num  37.8 41.8 44.2 38.9 35.5 46.5 39.1 43.8 45.2 39.9 ...
+\end{Soutput}
+\begin{Sinput}
+> ddig$animal <- factor(ddig$animal)
+> # options(contrasts =c("contr.treatment", "contr.poly"))
+> man1 <- manova(cbind(dmd,ndfd,adfd,cellud) ~ diet, ddig)
+> str(man1)
+\end{Sinput}
+\begin{Soutput}
+List of 13
+ $ coefficients : num [1:5, 1:4] 64.62 -4.5 -3.34 -2.6 -4.2 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:5] "(Intercept)" "dietAO" "dietMM" "dietMO" ...
+  .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+ $ residuals    : num [1:24, 1:4] 0.18 -2.12 -2.52 0.28 4.18 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:24] "1" "2" "3" "4" ...
+  .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+ $ effects      : num [1:24, 1:4] -302.553 -3.578 -2.079 -0.913 -6.641 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:24] "(Intercept)" "dietAO" "dietMM" "dietMO" ...
+  .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+ $ rank         : int 5
+ $ fitted.values: num [1:24, 1:4] 64.6 64.6 64.6 64.6 64.6 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:24] "1" "2" "3" "4" ...
+  .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+ $ assign       : int [1:5] 0 1 1 1 1
+ $ qr           :List of 5
+  ..$ qr   : num [1:24, 1:5] -4.899 0.204 0.204 0.204 0.204 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : chr [1:24] "1" "2" "3" "4" ...
+  .. .. ..$ : chr [1:5] "(Intercept)" "dietAO" "dietMM" "dietMO" ...
+  .. ..- attr(*, "assign")= int [1:5] 0 1 1 1 1
+  .. ..- attr(*, "contrasts")=List of 1
+  .. .. ..$ diet: chr "contr.treatment"
+  ..$ qraux: num [1:5] 1.2 1.08 1.1 1.13 1.2
+  ..$ pivot: int [1:5] 1 2 3 4 5
+  ..$ tol  : num 1e-07
+  ..$ rank : int 5
+  ..- attr(*, "class")= chr "qr"
+ $ df.residual  : int 19
+ $ contrasts    :List of 1
+  ..$ diet: chr "contr.treatment"
+ $ xlevels      :List of 1
+  ..$ diet: chr [1:5] "AA" "AO" "MM" "MO" ...
+ $ call         : language manova(cbind(dmd, ndfd, adfd, cellud) ~ diet, ddig)
+ $ terms        :Classes 'terms', 'formula' length 3 cbind(dmd, ndfd, adfd, cellud) ~ diet
+  .. ..- attr(*, "variables")= language list(cbind(dmd, ndfd, adfd, cellud), diet)
+  .. ..- attr(*, "factors")= int [1:2, 1] 0 1
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:2] "cbind(dmd, ndfd, adfd, cellud)" "diet"
+  .. .. .. ..$ : chr "diet"
+  .. ..- attr(*, "term.labels")= chr "diet"
+  .. ..- attr(*, "order")= int 1
+  .. ..- attr(*, "intercept")= int 1
+  .. ..- attr(*, "response")= int 1
+  .. ..- attr(*, ".Environment")=<environment: R_GlobalEnv> 
+  .. ..- attr(*, "predvars")= language list(cbind(dmd, ndfd, adfd, cellud), diet)
+  .. ..- attr(*, "dataClasses")= Named chr [1:2] "nmatrix.4" "factor"
+  .. .. ..- attr(*, "names")= chr [1:2] "cbind(dmd, ndfd, adfd, cellud)" "diet"
+ $ model        :'data.frame':	24 obs. of  2 variables:
+  ..$ cbind(dmd, ndfd, adfd, cellud): num [1:24, 1:4] 64.8 62.5 62.1 64.9 68.8 57.9 63.3 60 59.3 61.4 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : NULL
+  .. .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+  ..$ diet                          : Factor w/ 5 levels "AA","AO","MM",..: 1 1 1 1 1 2 2 2 2 3 ...
+  ..- attr(*, "terms")=Classes 'terms', 'formula' length 3 cbind(dmd, ndfd, adfd, cellud) ~ diet
+  .. .. ..- attr(*, "variables")= language list(cbind(dmd, ndfd, adfd, cellud), diet)
+  .. .. ..- attr(*, "factors")= int [1:2, 1] 0 1
+  .. .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. .. ..$ : chr [1:2] "cbind(dmd, ndfd, adfd, cellud)" "diet"
+  .. .. .. .. ..$ : chr "diet"
+  .. .. ..- attr(*, "term.labels")= chr "diet"
+  .. .. ..- attr(*, "order")= int 1
+  .. .. ..- attr(*, "intercept")= int 1
+  .. .. ..- attr(*, "response")= int 1
+  .. .. ..- attr(*, ".Environment")=<environment: R_GlobalEnv> 
+  .. .. ..- attr(*, "predvars")= language list(cbind(dmd, ndfd, adfd, cellud), diet)
+  .. .. ..- attr(*, "dataClasses")= Named chr [1:2] "nmatrix.4" "factor"
+  .. .. .. ..- attr(*, "names")= chr [1:2] "cbind(dmd, ndfd, adfd, cellud)" "diet"
+ - attr(*, "class")= chr [1:5] "manova" "maov" "aov" "mlm" ...
+\end{Soutput}
+\begin{Sinput}
+> (sum.man1 <- summary(man1, test="Wilks"))
+\end{Sinput}
+\begin{Soutput}
+          Df     Wilks approx F num Df den Df    Pr(>F)    
+diet       4 0.0018831    21.04     16 49.518 < 2.2e-16 ***
+Residuals 19                                               
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{Soutput}
+\begin{Sinput}
+> str(sum.man1)
+\end{Sinput}
+\begin{Soutput}
+List of 4
+ $ row.names  : chr [1:2] "diet" "Residuals"
+ $ SS         :List of 2
+  ..$ diet     : num [1:4, 1:4] 62.06 3.63 -12.95 -37.01 3.63 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+  .. .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+  ..$ Residuals: num [1:4, 1:4] 157 216 212 -167 216 ...
+  .. ..- attr(*, "dimnames")=List of 2
+  .. .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+  .. .. ..$ : chr [1:4] "dmd" "ndfd" "adfd" "cellud"
+ $ Eigenvalues: num [1, 1:4] 62.11196 5.88714 0.219 0.00224
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr "diet"
+  .. ..$ : NULL
+ $ stats      : num [1:2, 1:6] 4 19 0.00188 NA 21.04044 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:2] "diet" "Residuals"
+  .. ..$ : chr [1:6] "Df" "Wilks" "approx F" "num Df" ...
+ - attr(*, "class")= chr "summary.manova"
+\end{Soutput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> library(car)
+> Anova(man1,test="Wilks")
+\end{Sinput}
+\begin{Soutput}
+Type II MANOVA Tests: Wilks test statistic
+     Df test stat approx F num Df den Df    Pr(>F)    
+diet  4 0.0018831    21.04     16 49.518 < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{Soutput}
+\begin{Sinput}
+> library(candisc)
+> man1.can1 <-candisc(man1, term="diet")
+> plot(man1.can1)
+\end{Sinput}
+\begin{Soutput}
+Vector scale factor set to  14 
+\end{Soutput}
+\begin{Sinput}
+> library(heplots)
+> heplot3d(man1.can1, scale=6, fill=TRUE)
+> 
+\end{Sinput}
+\end{Schunk}
+
+
+\end{document}

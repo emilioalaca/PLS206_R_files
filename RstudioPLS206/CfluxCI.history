@@ -1,0 +1,31 @@
+cflux<-read.csv("Cflux.csv", header=TRUE)
+summary(cflux)
+cflux$Tgroup<-factor(cflux$TempC)
+summary(cflux)
+plot(CO2gperh~TempC,cflux)
+linearCf<-lm(CO2gperh~TempC, cflux)
+summary(linearCf)
+plot(linearCf)
+cflux<-read.csv("Cflux.csv", header=TRUE)
+summary(cflux)
+cflux$Tgroup<-factor(cflux$TempC)
+summary(cflux)
+plot(CO2gperh~TempC,cflux)
+linearCf<-lm(CO2gperh~TempC, cflux)
+summary(linearCf)
+dim(linearCf)
+linearCf
+linearCf[1]
+linearCf[2]
+linearCf[2,1]
+linearCf[2][1]
+linearCf$coef[1]
+linearCf$resid[2]
+plot(linearCf)
+abline(coef(linearCf,lty=6))
+confint(linearCf)
+library(ellipse)
+plot(ellipse(linearCf))
+abline(v=confint(linearCf)[1])
+abline(v=confint(linearCf)[1,])
+abline(h=confint(linearCf)[2,])

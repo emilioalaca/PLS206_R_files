@@ -1,0 +1,512 @@
+camper <- factor(camper)
+})
+summary(zinb)
+ggplot(zinb, aes(count)) + geom_histogram() + scale_x_log10()
+summary(m1 <- zeroinfl(count ~ child + camper | persons, data = zinb))
+mnull <- update(m1, . ~ 1)
+summary(mnull)
+dpois(0,exp(2.0316))
+hist(zinb$count)
+hist(zinb$count, breaks=20)
+hist(zinb$count, breaks=40)
+hist(zinb$count, breaks=50)
+hist(zinb$count, breaks=60)
+table(zinb$count)
+plot(table(zinb$count))
+require(ggplot2)
+require(pscl)
+require(boot)
+zinb <- read.csv("http://www.ats.ucla.edu/stat/data/fish.csv")
+zinb <- within(zinb, {
+nofish <- factor(nofish)
+livebait <- factor(livebait)
+camper <- factor(camper)
+})
+summary(zinb)
+ggplot(zinb, aes(count)) + geom_histogram() + scale_x_log10()
+hist(zinb$count, breaks=40)
+plot(table(zinb$count))
+summary(m1 <- zeroinfl(count ~ child + camper | persons, data = zinb))
+# the formula specifies response ~ model for count | model for zero inflation
+mnull <- update(m1, . ~ 1)
+summary(mnull)
+pchisq(2 * (logLik(m1) - logLik(mnull)), df = 3, lower.tail = FALSE)
+summary(p1 <- glm(count ~ child + camper, family = poisson, data = zinb))
+vuong(p1, m1)
+plot(residuals(m1, type="pearson")~fitted(m1)) # Inspect Residuals
+plot(zinb$count~fitted(m1))
+newdata1 <- expand.grid(0:3, factor(0:1), 1:4)
+colnames(newdata1) <- c("child", "camper", "persons")
+newdata1 <- subset(newdata1, subset=(child<=persons))
+newdata1$phat <- predict(m1, newdata1)
+pi.parms <- coef(m1, model= "zero")
+str(m1)
+zmat <- model.matrix(m1, model="zero")
+g <- zmat %*% pi.parms
+g
+fitted(m1)
+fitted(m1. type="prob")
+fitted(m1, type="prob")
+head(fitted(m1, type="prob"))
+head(fitted(m1))
+head(fitted(m1, type="count"))
+head(predict(m1, type="count"))
+head(predict(m1, type="prob"))
+head(predict(m1, type="zero"))
+heard(zinb$persons)
+head(zinb$persons)
+p.fishing <- exp(g)/(1 + exp(g))
+head(p.fishing)
+p.fishing2 <- predict(m1, type="zero")
+class(p.fishing,p.fishing2)
+class(c(p.fishing,p.fishing2)
+)
+class(p.fishing)
+head(p.fishing)
+head(p.fishing2)
+class(p.fishing)
+class(p.fishing2)
+predict(m1, type="count")
+head(predict(m1, type="count"))
+head(predict(m1, type="response"))
+mu.parms <- coef(m1, model= "count") # parameters of the linear predictor eta for count
+zmat2 <- model.matrix(m1, model="count") # values of the predictors for data
+g2 <- zmat2 %*% mu.parms # predicted or fitted values of linear predictor for data
+mu <- exp(g2) # predicted probability that each group was fishing,
+head(mu)
+head(mu2)
+mu2 <- predict(m1, typ="count")
+head(mu)
+head(mu2)
+class(mu)
+class(mu2)
+expected.count <- mu * (1-p.fishing)
+head(expected.count)
+head(predict(m1, type="count"))
+head(predict(m1, type="response"))
+d1 <- read.csv("../Examples/zeroinfl.txt", header=TRUE)
+library(car)
+library(ggplot2)
+par(mfrow=c(3,1))
+scatterplot(nrrm ~ river, data=d1)
+scatterplot(nrrm ~ road, data=d1)
+scatterplot(nrrm ~ cover, data=d1)
+plot(table(d1$nrrm))
+par(mfrow=c(1,1))
+plot(table(d1$nrrm))
+glm1 <- glm(nrrm ~ tveg + river + road + cover + river:road + river:cover + road:cover, data=d1)
+glm1 <- glm(nrrm ~ river + road + cover + river:road + river:cover + road:cover, data=d1)
+plot(d1$nrrm~exp(fitted(glm1)))
+plot(d1$nrrm~fitted(glm1))
+plot(d1$nrrm~fitted(glm1, type="response"))
+glm1 <- glm(nrrm ~ river + road + cover + river:road + river:cover + road:cover, family=poisson, data=d1)
+plot(d1$nrrm~fitted(glm1, type="response"))
+summary(glm1)
+Anova(glm1, test="Wald", type=3)
+anova(glm1, test="Chisq")
+pchisq(deviance(glm1),143)
+1-pchisq(deviance(glm1),143)
+par(mfrow=c(2,2))
+plot(glm1)
+library(AER)
+dispersiontest(m5, trafo=1)
+dispersiontest(glm1, trafo=1)
+glm2 <- glm(nrrm ~ river + road + cover + river:road + river:cover + road:cover, family=quasipoisson, data=d1)
+plot(d1$nrrm~fitted(glm2, type="response"))
+anova(glm2, test="Chisq")
+1-pchisq(deviance(glm2),142) # excessive deviance; model needs to be improved
+summary(glm2)
+1-pchisq(deviance(glm2),143) # excessive deviance; model needs to be improved
+par(mfrow=c(2,2))
+plot(glm2)
+dispersiontest(glm2, trafo=1)
+@
+library(pscl)
+zip1 <- zeroinfl(nrrm ~ river + road + cover + river:road + river:cover + road:cover | river + road + cover, data=d1)
+summary(zip1)
+anova(zip1)
+str(zip1)
+anova(zip1$count)
+zip2 <- zeroinfl(nrrm ~ river + road + cover + river:road + road:cover | road + cover, data=d1)
+summary(zip2)
+zip3 <- zeroinfl(nrrm ~ river + road + cover + river:road + road:cover | road + cover, data=d1)
+summary(zip3)
+zip3 <- zeroinfl(nrrm ~ river + road + cover + river:road | road, data=d1)
+summary(zip3)
+vuong(glm1,zip3)
+vuong(zip3,glm1)
+plot(residuals(zip3, type="pearson") ~ fitted(zip3))
+deviance(zip3)
+mean(d1$road)
+range(d1$river)
+range(d1$cover)
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05), river=c(0,5,10,15),road=c(2,20))
+p.data$nrrm <- predict(zip3,newdata=p.data, type="response")
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+geom_point() +
+geom_line() +
+facet_wrap(~road) +
+labs(x = "Cover", y = "Predicted number of rare mammal")
+library(ggplot2)
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+geom_point() +
+geom_line() +
+facet_wrap(~road) +
+labs(x = "Cover", y = "Predicted number of rare mammal")
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05), river=c(0,5,10,15),road=c(2,10,20))
+p.data$nrrm <- predict(zip3,newdata=p.data, type="response")
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+geom_point() +
+geom_line() +
+facet_wrap(~road) +
+labs(x = "Cover", y = "Predicted number of rare mammal")
+library(leaps)
+install.packages("bestglm", lib="/Library/Frameworks/R.framework/Versions/3.1/Resources/library")
+library(bestglm)
+data(zprostate)
+str(zprostate)
+m3 <- glm(nrrm ~ tveg + (cover+river+road)^2, family="poisson", data=d1)
+d1 <- read.csv("../Examples/dataHW07F14.txt", header=TRUE)
+m3 <- glm(nrrm ~ tveg + (cover+river+road)^2, family="poisson", data=d1)
+bestglm(cbind(model.matrix(m3),d1$nrrm), family=poisson)
+class(cbind(model.matrix(m3),d1$nrrm))
+bestglm(as.data.frame(cbind(model.matrix(m3),d1$nrrm), family=poisson))
+bestglm(as.data.frame(cbind(model.matrix(m3)[,-1],d1$nrrm), family=poisson))
+d1 <- read.csv("../Examples/dataHW07F14.txt", header=TRUE)
+library(car)
+library(ggplot2)
+m1 <- glm(nrrm ~ tveg + (cover+river+road)^2, family="poisson", data=d1)
+summary(m1)
+anova(m1, test="Chisq")
+Anova(m1, test="Chisq"))
+Anova(m1, test="Chisq")
+Anova(m1, test="Wald")
+Anova(m1, test="Wald", type=3)
+m2 <- glm(nrrm ~ tveg + (cover+river+road)^2 - cover:road, family="poisson", data=d1)
+anova(m1, test="Chisq")
+Anova(m1, test="Wald", type=3)
+anova(m2, test="Chisq")
+Anova(m2, test="Wald", type=3)
+Anova(m1, test="Wald", type=3)
+Anova(m2, test="Wald", type=3)
+m3 <- glm(nrrm~cover+river+road+cover:river+road:river, family="poisson", data=d1)
+Anova(m3, type=3)
+Anova(m3, test="Wald", type=3)
+anova(m1,m3, test="Chisq")
+Anova(m1, test="Wald", type=3)
+m4 <- glm(nrrm~cover+river+road+road:river, family="poisson", data=d1)
+Anova(m4, test="Wald", type=3)
+AIC(m4)
+anova(m1,m4, test="Chisq")
+deviance(m4)
+pchisq(deviance(m4), 95)
+library(AER)
+dispersiontest(m4, trafo=1)
+par(mfrow=c(2,2))
+plot(m4)
+summary(m4)
+mean(d1$road)
+range(d1$river)
+range(d1$cover)
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05), river=c(0,5,10,15),road=c(2,20))
+p.data$nrrm <- predict(m5,newdata=p.data, type="response")
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+geom_point() +
+geom_line() +
+facet_wrap(~road) +
+labs(x = "Cover", y = "Predicted number of rare mammal")
+p.data$nrrm <- predict(m4,newdata=p.data, type="response")
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+geom_point() +
+geom_line() +
+facet_wrap(~road) +
+labs(x = "Cover", y = "Predicted number of rare mammal")
+p.data
+t.data <- expand.grid(cover=c(0.25,0.75), river=c(1,5),road=c(2,20))
+t.data$nrrm <- predict(m4,newdata=t.data, type="response")
+t.data
+library("xtable", lib.loc="/Library/Frameworks/R.framework/Versions/3.1/Resources/library")
+data=scan()
+aacon<-matrix(data,ncol=3,byrow=TRUE,dimnames=list(NULL,c("Ala","Asp","Tyr")))
+aacon
+dig
+dig <- read.csv("../Examples//xmpl_digMANOVA.txt", header=TRUE)
+dig
+str(dig)
+mv1 <- manova(cbind(DM.d,NDF.d,ADF.d,Cellu.d) ~ diet, data=dig)
+anova(mv1)
+summary.aov(mv1)
+mv1
+sqrt(8.2852)
+summary.aov(mv1, test="W")
+summary(mv1, test="W")
+summary(mv1, test="H")
+summary(mv1, test="P")
+library(candisc)
+dig <- read.csv("../Examples//xmpl_digMANOVA.txt", header=TRUE)
+str(dig)
+mv1 <- manova(cbind(DM.d,NDF.d,ADF.d,Cellu.d) ~ diet, data=dig)
+mv1
+summary(mv1, test="W")
+summary(mv1, test="H")
+summary(mv1, test="P")
+summary.aov(mv1)
+H <- (n-1)*cov(mv1$fitted.values)
+n <- dim(dig[1])
+H <- (n-1)*cov(mv1$fitted.values)
+E <- (n-1)*cov(MV2$residuals)
+E
+E <- (n-1)*cov(mv1$residuals)
+E
+mv1$residuals
+dim(dig[1])
+n <- dim(dig)[1]
+H <- (n-1)*cov(mv1$fitted.values)
+E <- (n-1)*cov(mv1$residuals)
+E
+H
+mv1$fitted.values
+library(candisc)
+can1 <- candisc(mv1)
+plot(can1)
+str(can1)
+can.score <- scores(can1)
+can.score <- can1$scores
+class(can1.scores)
+can.scores <- can1$scores
+class(can1.scores)
+can1.scores <- can1$scores
+class(can1.scores)
+can1.scores
+anova(Can1~diet, data=can1.scores)
+anova(lm(Can1~diet, data=can1.scores)
+)
+mlm1 <- lm(cbind(DM.d,NDF.d,ADF.d,Cellu.d) ~ diet, data=dig)
+can1 <- candisc(mlm1)
+plot(can1)
+62.11196/63.11196
+heplot(mlm1)
+heplot3d(mlm1)
+str(dig)
+T <- (n-1)*cov(dig[,3:6])
+E + H
+T
+cor(dig$Can1,can1.scores$Can1)
+cor(dig$Can2,can1.scores$Can2)
+cor(dig$Can3,can1.scores$Can3)
+str(can1.scores)
+cor(dig[,3:6],can1.scores[,2:5])
+levels(dig$diet)
+dig$color <- "orange"
+dig$color[dig$diet=="AA"] <- "blue"
+dig$color[dig$diet=="AO"] <- "green"
+dig$color[dig$diet=="MM"] <- "red"
+dig$color[dig$diet=="OO"] <- "yellow"
+plot3d(dig$ADF.d,dig$DM.d,dig$NDF.d, type="s", col=dig$color, size=1)
+phytus <- read.csv("../Examples/phytus.txt", header=TRUE)
+mlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)
+Manova(mlm1)
+MVmlm1 <- Manova(mlm1)
+summary(MVmlm1)
+plot(MVmlm1)
+candi1 <- candisc(mlm1)
+plot(candi1)
+plot(candi1, term="ecotype")
+plot(candi1, term="location")
+plot(candi1, term="ecotype")
+candi.eco <- candisc(mlm1, term="ecotype")
+plot(candi.eco)
+candi.loc <- candisc(mlm1, term="location")
+plot(candi.loc)
+candi.ecoloc <- candisc(mlm1, term="ecotype:location")
+plot(candi.ecoloc)
+heplot(mlm1)
+candi.ecoloc.scores <- candi.ecoloc$scores
+plot(candi.ecoloc.scores)
+str(candi.ecoloc.scores)
+my.iris <- read.csv("../Examples/iris.txt", header=TRUE)
+mvres <- as.data.frame(residuals(manova(cbind(sl,sw,pl,pw) ~ spp, my.iris)))
+names(mvres) <- c("esl","esw","epl","epw")
+my.iris <- cbind(my.iris, mvres)
+my.iris$color <- "orange"
+my.iris$color[my.iris$spp=="setosa"] <- "blue"
+my.iris$color[my.iris$spp=="virginica"] <- "green"
+library(rgl)
+open3d()
+plot3d(my.iris$esl,my.iris$esw,my.iris$epl, type="s", col=my.iris$color, size=1) # plot residuals
+cov678setosa <- cov(my.iris[my.iris$spp=="setosa",6:8]) # calculate covariances for ellipses
+cov678virginica <- cov(my.iris[my.iris$spp=="virginica",6:8])
+cov678versicolor <- cov(my.iris[my.iris$spp=="versicolor",6:8])
+mean678setosa <- apply(my.iris[my.iris$spp=="setosa",1:3],2,mean) # calculate centroids for ellipses
+mean678virginica <- apply(my.iris[my.iris$spp=="virginica",1:3],2,mean)
+mean678versicolor <- apply(my.iris[my.iris$spp=="versicolor",1:3],2,mean)
+plot3d(ellipse3d(cov678setosa), col="blue",alpha=0.4, add=TRUE) # add ellipses to residuals
+plot3d(ellipse3d(cov678virginica), col="green",alpha=0.4, add=TRUE)
+plot3d(ellipse3d(cov678versicolor), col="orange",alpha=0.4, add=TRUE)
+qdiris <- qda(x=my.iris[,1:4], grouping=my.iris$spp, prior=c(1,1,1)/3)
+library(MASS)
+qdiris <- qda(x=my.iris[,1:4], grouping=my.iris$spp, prior=c(1,1,1)/3)
+summary(qdiris)
+qd.pred <- predict(qdiris, newdata=my.iris[,1:4], method="debiased") # method corrects for unknown parameters of the posterior distribution.
+qd.pred2 <- predict(qdiris, newdata=my.iris[,1:4], method="debiased", prior=c(0.1,0.00,0.9))
+xtabs(~my.iris$spp+qd.pred2$class)
+predplot(qdiris)
+str(qdiris)
+install.packages("DiscriMiner", lib="/Library/Frameworks/R.framework/Versions/3.1/Resources/library")
+install.packages("dr", lib="/Library/Frameworks/R.framework/Versions/3.1/Resources/library")
+mlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)
+phytus <- read.csv("../Examples/phytus.txt", header=TRUE)
+library(car)
+library(candisc)
+mlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)
+MVmlm1 <- Manova(mlm1)
+summary(MVmlm1)
+candi.eco <- candisc(mlm1, term="ecotype")
+plot(candi.eco)
+candi.loc <- candisc(mlm1, term="location")
+plot(candi.loc)
+candi.ecoloc <- candisc(mlm1, term="ecotype:location")
+plot(candi.ecoloc)
+candi.ecoloc.scores <- candi.ecoloc$scores
+str(candi.ecoloc.scores)
+plot(candi.ecoloc.scores$Can2~candi.ecoloc.scores$Can1)
+points(candi.ecoloc.scores$Can2~candi.ecoloc.scores$Can1)
+plot(candi.ecoloc)
+lm1 <- lm(Can1 ~ ecotype*location, candi.ecoloc.scores)
+summary(lm1)
+anova(lm1)
+library(gplot2)
+library(ggplot2)
+str(phytus)
+corr(phytus[,3:4],candi.ecoloc.scores[,3:4])
+cor(phytus[,3:4],candi.ecoloc.scores[,3:4])
+library(ez)
+pred <- ezPredict(lm1)
+levels(phytus$ecotype)
+levels(phytus$location)
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =("1desert","2mountain","3greenhouse"))
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =c("1desert","2mountain","3greenhouse"))
+dplot <- predict(lm1,newdata)
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+dplot <-cbind(newdata, predict(lm1,newdata))
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+str(newdata)
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =c("1desert","2mountain","3greenhouse"))
+dplot <-cbind(newdata, predict(lm1,newdata))
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =c("1desert","2mountain","3greenhouse"))
+str(newdata)
+newdata
+predict(lm1,newdata)
+dplot <-cbind(newdata, predict(lm1,newdata))
+str(dplot)
+dplot <-cbind(newdata, Can1=predict(lm1,newdata))
+str(dplot)
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+phytus <- read.csv("../Examples/phytus.txt", header=TRUE)
+mlm1 <- lm(cbind(seeds,peaksc) ~ ecotype*location, data=phytus)
+MVmlm1 <- Manova(mlm1)
+library(car)
+MVmlm1 <- Manova(mlm1)
+summary(MVmlm1)
+candi.ecoloc <- candisc(mlm1, term="ecotype:location")
+library(candisc)
+candi.ecoloc <- candisc(mlm1, term="ecotype:location")
+plot(candi.ecoloc)
+candi.ecoloc.scores <- candi.ecoloc$scores
+lm1 <- lm(Can1 ~ ecotype*location, candi.ecoloc.scores)
+summary(lm1)
+anova(lm1)
+(34.762+220.860+107.135)/(34.762+220.860+107.135+54)
+sqrt( 0.8704281)
+library(ggplot2)
+newdata <- expand.grid(ecotype=c("basin","sierra"), location =c("1desert","2mountain","3greenhouse"))
+dplot <-cbind(newdata, Can1=predict(lm1,newdata))
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+ggplot(dplot, aes(x = location, y = Can1)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype)) +
+geom_point() +
+geom_line() +
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype, colour=ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype, group=ecotype)) +
+geom_point() +
+geom_line() +
+labs(x = "location", y = "Predicted Can1")
+dplot <-cbind(newdata, Can1=predict(lm1,newdata), se.fit=TRUE)
+str(dplot)
+predict(lm1,newdata, se.fit=TRUE)
+se=predict(lm1,newdata, se.fit=TRUE)$se.fit
+predict(lm1,newdata, se.fit=TRUE)$se.fit
+dplot <-cbind(newdata, Can1=predict(lm1,newdata), se=predict(lm1,newdata, se.fit=TRUE)$se.fit)
+str(dplot)
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype, group=ecotype)) +
+geom_point(aes(shape=ecotype), size=3) +
+geom_line(aes(linetype=ecotype), size=0.6) +
+geom_errorbar(aes(ymax=Can1+se, ymin=Can1-se))
+labs(x = "location", y = "Predicted Can1")
+ggplot(dplot, aes(x = location, y = Can1, colour = ecotype, group=ecotype)) +
+geom_point(aes(shape=ecotype), size=4) +
+geom_line(aes(linetype=ecotype), size=2) +
+geom_errorbar(aes(ymax=Can1+se, ymin=Can1-se), width=0.1)
+labs(x = "location", y = "Predicted Can1")
+str(phytus)
+str(candi.ecolo.scores)
+str(candi.ecolo)
+str(candi.ecoloc)
+str(candi.ecoloc.scores)
+cor(phytus[,3:4],candi.ecoloc.scores[,3:4])
+Nmin<-read.csv("stepwise regression data.csv", header=T)
+sm1 <- lm( NetNmin28~  WEON+WEOC +WECN + SOM +TSN +TSC  +TSCN+SolvitaCO2+SHI , Nmin)
+library(car)
+residualPlots(sm1)
+X <- Nmin[,c("WEON","WEOC" ,"WECN",  "SOM", "TSN","TSC","TSCN","SolvitaCO2","SHI")]
+library(bootstrap) # load package that has jackknife()
+theta<-function(x,xdata)
+{mahalanobis(xdata[-x,],colMeans(xdata[x,]), cov(xdata[x,]))}
+jackD2<-jackknife(1:dim(X)[1], theta, X) #jackknife indicating to remove each of the whole set of rows in X
+jackD2$jack.values  #compare with the Chi-square distribution
+qqPlot(jackD2$jack.values,distribution="chisq", df=ncol(X))
+X[which(jackD2$jack.values==max(jackD2$jack.values)),] #maximum value
+outlierTest(sm1)
+influencePlot(sm1)
+library(leaps)
+library(DAAG)
+cv.lm(df=Nmin, sm2, m=4) # 4 fold cross-validation
+sm2 <- lm(NetNmin28~  WEON+WEOC+TSC, Nmin)
+cv.lm(df=Nmin, sm2, m=4) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=3) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=4) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=3) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=5) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=6) # 4 fold cross-validation
+cv.lm(df=Nmin, sm2, m=7) # 4 fold cross-validation
+summary(sm2)
+3.65^2
+influencePlot(sm2)
+outlierTest(sm2)
+library(MASS)
+BIC(sm2)
+summary(sm2)
+anova(sm2)
+Anova(sm2, type=3)

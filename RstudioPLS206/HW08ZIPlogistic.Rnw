@@ -1,0 +1,314 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mdwlist}
+\usepackage[inner=3cm,outer=4cm]{geometry}
+\usepackage{mathtools}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Homework 08. Zero-inflated Poisson and Logistic Regression. PLS206 Fall 2014}
+\author{Emilio A. Laca}
+\maketitle
+
+
+\section {Zero Inflated Poisson (complete)}
+\subsection{Data}
+
+This exercise uses simulated data similar to those data used in HW07F14, but vegetation type is dropped. Thus, we know the true model and whether the assumptions are met. The data simulate the number of individuals of a relatively rare mammal observed in a series of locations in East Africa. Locations were selected haphazardly. Variables measured at each location were:
+
+\begin{description*}
+  \item[nrrm] number of individuals of the relatively rare mammal seen.
+  \item[river] distance to the nearest river in km.
+  \item[road] distance to nearest road in km.
+  \item[cover] visual cover; proportion of a vertical surface visible from 20 m.
+\end{description*}
+
+The data simulation code is presented for completeness, but for the analysis we use a preset simulation that remains constant across compilations of this document. Note that this simulation includes zero inflation.
+
+Reading the simulation code may also help to understand the type of data specifically addressed by ZIP's. The simulation shows plainly the two processes that generate ZIP data.
+First, we generate a series of values for the predictors. Arbitrarily, this values are generated independently with various suitable distributions. The parameter values used are selected so predictor values are plausible. Then, plausible parameter values for the count are set.
+<<datasim>>=
+dsim <- data.frame(river = round(runif(150, min=0.5, max=15),1),
+                 road = round(rchisq(150, 6),1),
+                 cover = c(
+                   rbeta(30,2,10),
+                   rbeta(30,4,8),
+                   rbeta(30,10,3),
+                   rbeta(30,8,4),
+                   rbeta(30,6,6)))
+beta0 <- 0.2
+bRiver <- -0.1
+bRoad <- 0.05
+bRiverRoad <- 0.02
+bCover <- 2
+@
+
+Second, we randomly generate count data representing the number of individuals in each location, assuming that the location was found or "colonized." For this, the mean of the Poisson process is a deterministic function of the predictors.
+
+<<>>=
+# count component
+dsim$nrrm <- rpois(150,
+                 exp(beta0 +
+                     bRiver*dsim$river +
+                     bRoad*dsim$road +
+                     bRiverRoad*dsim$river*dsim$road +
+                     bCover*dsim$cover))
+@
+
+Third, and independently of the counts, some observations are set to zero using a binomial process. This simulates the process by which some locations are not yet found or colonized. Thus, they have zero individuals, regardless of how good they are. As a side note, consider that every observation is assumed to be independent. In reality, unless we sample locations that are sufficiently far from each other relative to the dispersal distance of the mammal, it is likely that the probabilities of colonization are spatially correlated, and that would have to be incorporated into the simulation and then into the model.
+
+<<>>=
+# zero component
+gamma0 <- 10
+gamma1 <- -2
+dsim$is.zero <- rbinom(150,1,1-exp(gamma0+gamma1*dsim$road)/(1+exp(gamma0+gamma1*dsim$road)))
+dsim$nrrm <- dsim$nrrm*dsim$is.zero
+# write.csv(dsim,"../Examples/zeroinfl.txt")
+@
+
+\subsection{Data exploration}
+
+A plot of the table of values suggests zero-inflation.
+
+<<fig=TRUE>>=
+d1 <- read.csv("../Examples/zeroinfl.txt", header=TRUE)
+library(car)
+library(ggplot2)
+plot(table(d1$nrrm))
+@
+
+The number of individuals counted is a positive discrete variable. There is no limit to the potential number of individuals found. We start with a distribution that accommodates both properties, the Poisson distribution. We must take into account the fact that there are 100 observations, thus, we should not consider models with more than 15 degrees of freedom, which should not be a problem in this case.
+
+<<glm1,fig=TRUE>>=
+glm1 <- glm(nrrm ~ river + road + cover + river:road + river:cover +
+              road:cover, family=poisson, data=d1)
+plot(log(d1$nrrm+1)~log(fitted(glm1, type="response")+1))
+summary(glm1)
+anova(glm1, test="Chisq")
+1-pchisq(deviance(glm1),143) # excessive deviance; model needs to be improved
+par(mfrow=c(2,2))
+plot(glm1)
+library(AER)
+dispersiontest(glm1, trafo=1)
+@
+
+The plot of frequencies of number of individuals found in each location suggests that there are too many zeros. If we fit a glm with main effects and two-way interaction between continuous predictors, the plot of observed against fitted values also suggests that there are too many zeros.
+
+Although we are not using the final model form for the counts, we are using a model that should produce relatively good predictions, because it is the full model.
+
+\subsection{Modeling}
+
+The residuals plot also suggests that there is a range of low fitted values for which the number of individuals found has too many zeroes. We decide to check this by fitting a zero-inflated Poisson model (ZIP) and testing if it is better than the glm.
+
+Notice that the excessive frequency of zeros also results in a significant overdispersion. To test for overdispersion we fit a model using the quasipoisson family, which has one additional parameter to allow for a variance that is greater (by a constant factor) than the mean. Technically, the model development should be repeated with the new approach, but here we just test for overdispersion. The package AER has a function \verb!dispersiontest()! that performs a test of significance of overdispersion.
+Using a quasipoisson family, however, does not fix the problem.
+
+<<glm2, fig=TRUE>>=
+glm2 <- glm(nrrm ~ river + road + cover + river:road + river:cover +
+              road:cover, family=quasipoisson, data=d1)
+plot(d1$nrrm~fitted(glm2, type="response"))
+summary(glm2)
+anova(glm2, test="Chisq")
+1-pchisq(deviance(glm2),143) # excessive deviance; model needs to be improved
+par(mfrow=c(2,2))
+plot(glm2)
+@
+
+\subsection{ZIP}
+
+In order to fit a ZIP we need to use the \verb!pscl! package. We start the modeling of the zeros by including all predictors in the zero inflation part of the model. Notice that the formula for \verb!zeroinfl()! has a vertical bar that separates the model for the counts (Poisson) from the model for the zero inflation (Binomial).
+<<zip1>>=
+library(pscl)
+zip1 <- zeroinfl(nrrm ~ river + road + cover + river:road + river:cover +
+                   road:cover | river + road + cover, data=d1)
+summary(zip1)
+@
+
+The \verb!anova()! of glm1 indicated that \verb!river:cover! could be dropped from the count part. This is corroborated by the summary of zip1, where \verb!river:cover! has the highest probability among the interactions. The zero inflation part can be simplified by removing river.
+
+<<zip2>>=
+zip2 <- zeroinfl(nrrm ~ river + road + cover + river:road +
+                   road:cover | road + cover, data=d1)
+summary(zip2)
+@
+
+We further simplify the model by eliminating road:cover from the count and cover from the zero inflation part.
+
+<<zip3>>=
+zip3 <- zeroinfl(nrrm ~ river + road + cover + river:road |
+                   road, data=d1)
+summary(zip3)
+@
+
+This model cannot be simplified any more, because all predictors are either significant or involved in a significant interaction. We can do a final test to make sure the model is not significantly worse than the initial full model.
+
+<<val, fig=TRUE>>=
+vuong(glm1,zip3) # the reduce model with the zero part is significantly better
+# than the initial full model without zero inflation.
+plot(residuals(zip3, type="pearson") ~ fitted(zip3)) # no pattern -> OK
+@
+
+Now we have a final model that is reasonable we can interpret the results. Because the parameter estimates of the zero inflation and the count parts are each indirectly related to the actual observations through a link function, it is easiest to use a figure for the interpretation of results.
+
+\subsection{Interpretation using graphs}
+
+<<fig=TRUE>>=
+# Predictions for various levels of cover and distance to river at average level of road
+mean(d1$road)
+range(d1$river)
+range(d1$cover)
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05), river=c(0,5,10,15),road=c(2,10,20))
+p.data$nrrm <- predict(zip3,newdata=p.data, type="response")
+
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~road) +
+  labs(x = "Cover", y = "Predicted number of rare mammal")
+@
+
+To explore the effect of road on zero inflation we can plot the predicted probability of "not found" or "not colonized" against road.
+
+
+<<fig=TRUE>>=
+plot(predict(zip3, type="zero") ~ d1$road)
+@
+
+We see that the probability of a zero ("not colonized") declines as the distance to road increases.
+
+\section {Zero Inflated Poisson: HW key}
+
+This exercise is based on the same scenario as HW07 but the data have been change to include zero inflation. The main purpose of the exercise is to model data with zero inflation. All the code is provided. You are asked to run and document each chunk of code as grouped below.
+
+For each chunk, write a comment describing the main purposes of the chunk. One to two sentences should be sufficient.
+Interpret the result of each chunk as appropriate. For example, when the code produces a residual plot you would write whether there is any violation of assumptions suggested by the plot or not. For the final plots, how is abundance of the rare mammal affected by river, road and cover?
+How does road affect the probability that the mammal found a particular location that might have suitable habitat? For this you need to interpret the zero inflation part of the model.
+
+\subsection{Chunk 1}
+<<>>=
+# Chunk 1
+d1 <- read.csv("../Examples/zeroinfl.txt", header=TRUE)
+library(car)
+library(ggplot2)
+@
+Data are read into R. Packages necessary for tests and graphics are loaded
+
+\subsection{Chunk 2}
+<<>>=
+# Chunk 2
+par(mfrow=c(1,1))
+plot(table(d1$nrrm))
+@
+
+Graphics window set to have one column and one row. A frequency plot of observations is made to inspect for excessive frequency of zeros. Indeed, the plot shows an overall excess of zeros relative to a Poisson distribution.
+
+\subsection{Chunk 3}
+<<>>=
+# Chunk 3
+glm1 <- glm(nrrm ~ river + road + cover + river:road + river:cover + road:cover, family=poisson, data=d1)
+plot(d1$nrrm~fitted(glm1, type="response"))
+summary(glm1)
+anova(glm1, test="Chisq")
+1-pchisq(deviance(glm1),143) # excessive deviance; model needs to be improved
+par(mfrow=c(2,2))
+plot(glm1)
+@
+
+A glm is used to start exploring the data with a plot of observed vs. predicted values. The fact that there is a range of predicted values for which zeros and greater values have a gap is also evidence of zero-inflation.
+The \verb !anova()! shows that some terms may be dropped from the full model. The type I tests show that river is not significant, but its interaction with road is, so it is not a candidate for deletion. If we were performing variable selection, river:cover would be a reasonable first choice to be dropped. Under the assumption of Poisson distribution and the model, the deviance should have a $\chi^2$ distribution with n minus no. estimated parameters degrees of freedom. The observed value of the deviance is too extreme with respect to the $\chi^2$, which indicates that something in the model in not right. It could be overdispersion, zero inflation or an otherwise poor model. Residual plots are inspected for clues.
+
+In order to see all residual plots in one window we specify 2 rows and two columns for the graphical output.
+
+Residual plots show a string of observations whose residuals increase as the predicted values increase. Those are the excessively frequent zeros under the assumption of a single Poisson process whose mean increases smoothly with changing predictor values. The zeros tend to produce a "hump" or deviation from the flat line in the response residuals. There are a couple of observations that are overly influential and have high leverage. Those would be inspected for errors of transcription, typos and odd field conditions. This issue is not pursued in this exercise.
+
+\subsection{Chunk 4}
+<<>>=
+# Chunk 4
+library(AER)
+dispersiontest(glm1, trafo=1)
+@
+
+We use the \verb!dispersiontest()! function of the AER package to test for overdispersion. The test indicates that significant overdispersion is present. The \verb!trafo=1! argument can be dropped. The default results in a more direct test of the overdispersion coefficient =1.
+
+\subsection{Chunk 5}
+<<>>=
+# Chunk 5
+glm2 <- glm(nrrm ~ river + road + cover + river:road + 
+              river:cover + road:cover, family=quasipoisson, data=d1)
+plot(d1$nrrm~fitted(glm2, type="response"))
+summary(glm2)
+anova(glm2, test="Chisq")
+1-pchisq(deviance(glm2),143) # excessive deviance; model needs to be improved
+par(mfrow=c(2,2))
+plot(glm2)
+@
+
+Pretending that we think the problem might be just overdispersion, we use a quasipoisson family and check if the problem is solved. The observed~predicted and residual plots still look like there are too many zeros for a range of predicted values, and the deviance is still too extreme for its df. So we decide to try a zero inflated model starting with the full model for the count and a model wit main effects for the zero inflation.
+
+The \verb!summary(glm2)! shows that the type I significance of model terms is similar in relative terms to that of \verb!glm1! but lower in general. Because we will try a different type of model, it is not necessary to do variable selection.
+
+\subsection{Chunk 6}
+<<>>=
+# Chunk 6
+library(pscl)
+zip1 <- zeroinfl(nrrm ~ river + road + cover + river:road +
+                   river:cover + road:cover | river + road +
+                   cover, data=d1)
+summary(zip1)
+@
+
+We loaded the \verb!pscl()! package for zero inflated models and try the first model. The model show a significant effect of road on zeros (longer distance fewer zeros). The interactions \verb!road:cover! and \verb!river:cover! are candidates for deletion in the count part but they have to be removed one at a time. For some reason, \verb!river:cover! was deleted first.
+
+\subsection{Chunk 7}
+<<>>=
+# Chunk 7
+zip2 <- zeroinfl(nrrm ~ river + road + cover + river:road + road:cover | road + cover, data=d1)
+summary(zip2)
+@
+
+The new model show that we can drop \verb!road:cover! from the count part and \verb!cover! from the zero inflation part.
+
+\subsection{Chunk 8}
+<<>>=
+# Chunk 8
+zip3 <- zeroinfl(nrrm ~ river + road + cover + river:road |
+                   road, data=d1)
+summary(zip3)
+@
+
+The final model contains only terms that are significant. We want to make sure that the step-by-step term deletions did not lead to a model that is significantly worse than the full model. We use the \verb!vuong()! test do compare the full \verb!glm1! versus the final model.
+
+\subsection{Chunk 9}
+<<>>=
+# Chunk 9
+vuong(glm1,zip3) # the reduced model with the zero part is significantly
+  #better than the initial full model without zero inflation.
+par(mfrow=c(1,1))
+plot(residuals(zip3, type="pearson") ~ fitted(zip3)) # no pattern -> OK
+@
+
+The plots of Pearson residuals vs. fitted values shows no patterns away from the horizontal 0. A plot of residuals vs. log(predicted) would provide a better view of the range of low predicted values.
+
+\subsection{Chunk 10}
+<<>>=
+# Chunk 10
+mean(d1$road)
+range(d1$river)
+range(d1$cover)
+p.data <- expand.grid(cover=seq(0.04,0.94,by=0.05),
+                      river=c(0,5,10,15),road=c(2,10,20))
+p.data$nrrm <- predict(zip3,newdata=p.data, type="response")
+ggplot(p.data, aes(x = cover, y = nrrm, colour = factor(river))) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~road) +
+  labs(x = "Cover", y = "Predicted number of rare mammal")
+@
+
+The graphics show the effect of all predictors on counts observed, integrating the zero inflation and the count processes. Yet, it is pretty clear that at short distance to roads, most predictions are zero, regardless of the values of other predictors.
+Distance to road increases the probabiliy of zero, and given that the mean is not zero, it reduced the expected nrrm. River and road interact such that near roads river has little impact, but far from roads, expected nrrm increases markedly with distance to river. Other things being equal, expected nrrm increases with increasing cover. Odd creature that likes to be away from roads and in thick cover but away from rivers!
+
+
+\end{document}

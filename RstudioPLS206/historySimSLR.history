@@ -1,0 +1,26 @@
+beta0<-200
+beta1<-50
+beta2<--2
+sigma<-100
+x<-c(1,1,1,3,3,3,4,4,7,7,7,7,9,9,12,12,13,13,14,14,14,18,18,18)
+x
+length(x)
+y<-beta0+beta1*x+beta2*x^2+rnorm(24,0, sigma)
+slr<-lm(y~x+I(x^2))
+slr
+y[13]
+yhat9
+slr<-lm(y~x)
+rm(slr)
+slr<-lm(y~x)
+yhat9<-slr$coef%*%c(1,9)
+yhat9
+slr
+plot(slr)
+plot(y~x)
+yhati9<-numeric(24)
+yi<-numeric(40)
+rm(yhati9)
+yhati9<-numeric(40)
+for(i in 1:40){}
+for(i in 1:40){y<-beta0+beta1*x+beta2*x^2+rnorm(24,0, sigma)}

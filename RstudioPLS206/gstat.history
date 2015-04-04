@@ -1,0 +1,48 @@
+gstat -i
+data(meuse)
+class(meuse)
+names(meuse)
+coordinates(meuse)=~x+y
+class(mesuse)
+class(meuse)
+summary(meuse)
+bubble(meuse, "zinc", main="zinc")
+plot(meuse$y~meuse$x)
+plot(meuse, y~x)
+meuse0<-data(meuse)
+rm(meuse0)
+meuse1<-meuse
+class(meuse1)
+class(meuse)
+coordinates(meuse)=~x+y
+class(meuse)
+data(meuse.grid)
+coordinates(meuse.grid)=~x+y
+gridded(meuse.grid)=TRUE
+zinc.idw<-krige(zinc~1, meuse,meuse.grid)
+image(meuse.grid["dist"])
+title("red is 0. can be added later")
+title("red is 0. can be added even later")
+title("")
+title("                              ")
+plot(zinc~dist,meuse)
+plot(log(zinc)~sqrt(dist),meuse)
+abline(lm(log(zinc)~sqrt(dist),meuse))
+variogram((log(zinc)~1),meuse)
+plot(variogram((log(zinc)~1),meuse))
+lzn.vg<-variogram((log(zinc)~1),meuse)
+lzn.fit=fit.variogram(lzn.vg,model=vgm(1,"Sph", 800,1))
+lzn.fit
+plot(lzn.vg,lzn.fit)
+lznr.vgm=variogram(log(zinc)~sqrt(dist),meuse)
+lznr.fit=fit.variogram(lznr.vgm, model=vgm(1,"Exp",300,1))
+plot(lznr.vgm,lznr.fit)
+lnz.kriged=krige(log(zinc)~1, meuse,meuse.grid,model=lzn.fit)
+help(spplot)
+spplot(lzn.kriged["var1.pred"])
+lzn.kriged=krige(log(zinc)~1, meuse,meuse.grid,model=lzn.fit)
+spplot(lzn.kriged["var1.pred"])
+lznr.kriged=krige(log(zinc)~sqrt(dist), meuse,meuse.grid,model=lznr.fit)
+spplot(lznr.kriged["var1.pred"]))
+spplot(lznr.kriged["var1.pred"]))\
+spplot(lznr.kriged["var1.pred"])

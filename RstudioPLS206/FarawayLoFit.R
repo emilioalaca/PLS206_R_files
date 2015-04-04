@@ -1,0 +1,10 @@
+# Lack of fit test by Julian Faraway.
+library(faraway)
+data(corrosion)
+mco1 <- lm(loss~Fe, data=corrosion)
+summary(mco1)
+plot(corrosion$Fe, corrosion$loss, xlab="Iron content", ylab="weight loss")
+abline(mco1$coef)
+mco2 <- lm(loss~factor(Fe), data=corrosion)
+points(corrosion$Fe, mco2$fit, pch=18)
+anova(mco1, mco2)

@@ -1,0 +1,107 @@
+\documentclass[letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\parskip 7.2pt
+
+\title{Homework 06 Key. PLS206 Fall 2013}
+\author{Emilio A. Laca}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\maketitle
+\SweaveOpts{concordance=TRUE}
+
+\section{Mixed effects models.}
+
+\subsection{Determine which fixed and random effects to include in a model.}
+
+You are studying the relationship between growth rate of salamanders and water temperature. Sixty salamanders are randomly selected from the population as "subjects" for the study. Three tanks are randomly assigned to each of three temperature treatments (15, 17, 19 and 21 C). Five salamanders are randomly selected for each tank. Individual salamander weight is measured every 10 days during 6 months. List the fixed and random effects you include in the model.
+
+Response variable is the weight of individual salamanders.
+Fixed effects: days*temperature, higher order response surface or a nonlinear equation on two variables.
+Random effects: lizard ID because each lizard is measured more than once, and tank, because more than one lizard is in each tank. Both random effects can be in the intercept and slopes.
+
+\section{Bootstrapping.}
+
+
+Use the \verb!"xmpl_Boots_original.csv"! file to obtain BCa bootstrapped confidence intervals for the intercept and slopes for the dataset with collinearity.
+
+
+\subsection{Report your code including full documentation of each line. [20]}
+
+<<boots>>=
+# Collinear data
+datab <- read.csv("../Examples/xmpl_Boots_original.csv", header=TRUE)
+betasr<-function(data,i){ # create function that yields the statistic of interest
+  bootsample<-data[i,] # generate a boostrap sample
+  model<-lm(Yr~X1r+X2r, data=bootsample) # regression using bootstrap sample
+  coef(model) #extract bootstrapped betas from model
+}
+library(boot)
+Col.boot<-boot(datab,betasr,R=2000) # perform 2000 boostrap samples and models and store result in "Col.boot."
+
+@
+
+\subsection{Report the confidence intervals. [10]}
+
+<<bootci>>=
+lapply(1:3, function (x) {boot.ci(Col.boot, index=x, type="bca" )})
+@
+
+\subsection{Calculate the confidence intervals using a regular lm() as usual (parametric CI based on the usual assumptions) and compare to the bootstrapping results. Report the parametric CI's. [20]}
+
+<<originalci>>=
+original.model<-lm(data=datab,Yr~X1r+X2r)
+summary(original.model)
+confint(original.model)
+plot(density(Col.boot$t[,2]))
+xs <- seq(-5,5,0.05)
+lines(x=xs,y=dnorm(xs, mean=coef(original.model)[2], sd=sqrt(vcov(original.model)[2,2])), lty=2)
+abline(v=confint(original.model)[2,])
+abline(v=boot.ci(Col.boot, index=2, type="bca")$bca[4:5], lty=2)
+
+@
+
+The bootstrapped CI is a little narrower and shifted upwards, indicating that for this sample the original estimator is slightly biased. However, the differences are minimal.
+
+
+\subsection{What kind of bootstrapping would you use in the Spartina data set? [5]}
+
+Use case resampling for this data because the variables are random variables. Values of soil properties are not manipulated nor known and fixed.
+
+\subsection{What kind of bootstrapping would you use in the P fertilization data? [5]}
+
+Predictor values were set manipulative and could be reproduced. If the model provides a good explanation of the data and has homogeneous variance, use residual resampling. 
+
+\subsection{Use the spartina soil (not biomass) data and bootstrapping to calculate CI's for eigenvalues 1-3. Report your code and the CI. [30]}
+
+<<bootpca>>=
+spart <- read.csv("../Examples/spartina.txt", header=TRUE)
+str(spart)
+library(boot)
+# I am including code to bootstrap the loadings to warn users about the
+# need to correct for direction reversals in the PC's.
+spart.pca <- prcomp(spart[,4:17])
+pca4boot <- function(pca.0, data, i) { #corrected for PC sign reversals
+  data.i <- data[i,]
+  pca.i <- prcomp(data.i[,4:17], scale=TRUE)
+  evals <- pca.i$sdev[1:3]^2
+  # if the PC direction reversed with respect to the original one,
+  # the signs below become negative and are used to reverse the
+  # signs of teh scores back to the original.
+  chng.sign1 <- sign(cor(pca.0$rotation[,1],pca.i$rotation[,1]))
+  chng.sign2 <- sign(cor(pca.0$rotation[,2],pca.i$rotation[,2]))
+  load.Zn.pc1 <- chng.sign1*cor(data.i[,8],pca.i$x[,1])
+  load.Zn.pc2 <- chng.sign2*cor(data.i[,8],pca.i$x[,2])
+  result <- c(evals,load.Zn.pc1,load.Zn.pc2)
+  return(result)
+}
+
+boot.pca <- boot(spart,pca4boot,1999, pca.0=spart.pca)
+
+lapply(1:3, function (x) {boot.ci(boot.pca, index=x, type="bca" )})
+
+@
+
+
+\end{document}

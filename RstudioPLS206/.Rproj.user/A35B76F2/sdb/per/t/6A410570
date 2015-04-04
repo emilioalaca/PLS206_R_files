@@ -1,0 +1,15 @@
+{
+    "contents" : "# Bootstrap demo: what good is bootstrapping? What is the impact of bias correction? Chi-square distribution.\n# Linear regression\n\n# Sample a population of residuals that is distributed with a Chi square distribution.\n\ne<-rchisq(20,2)\nhist(e)\nplot(density(rchisq(500,2)))\n\n# Simulate a dataset with chi-square errors with 2 df.\n# Note that the errors can only be positive!\n# Each time we call the function we simulate a sample.\nychi<-function(beta0,beta1,n) { beta0+beta1*seq(1:n)+rchisq(n,2)}\n\n# Now take one sample and apply \"traditional\" methods and bootstrapping with and w/out bias correction.\nmysmpl<-ychi(5,0.5,25)\nplot(mysmpl~seq(1:25))\nabline(a=5,b=0.5)\nmydata<-as.data.frame(cbind(mysmpl,seq(1:25))) # Traditional method\nnames(mydata)<-c(\"y\",\"x\")\nlm1<-lm(y~x,mydata)\nsummary(lm1)\nabline(a=coef(lm1)[1],b=coef(lm1)[2])\n\nlibrary(boot)\nmyboot<-function(data, i) {\n\tdata<-data[i,]\n\tmylm<-lm(y~x,data)\n\tcoefficients(mylm)\n\t}\n\t\nboot1<-boot(mydata,myboot,1999)\nplot(boot1, index=1)\nplot(boot1, index=2)\nboot.ci(boot1,index=2)\nconfint(lm1)\n\n# Streamlined, compact program\n# 200 simulations:\nbciSlope<-list(\"slopes\")\nbciIntercept<-list(\"intercept\")\nfor (i in 1:200) {\n\tmydata<-as.data.frame(cbind(ychi(5,0.5,15),seq(1:15)))\n\tnames(mydata)<-c(\"y\",\"x\")\n\tlm1<-lm(y~x,mydata)\n\tboot1<-boot(mydata,myboot,999)\n\tbciS<-boot.ci(boot1,index=2)\n\tbciSlope[[i]]<-rbind(confint(lm1)[2,],bciS$normal[2:3],bciS$basic[4:5],bciS$percent[4:5],bciS$bca[4:5])\n\tbciI<-boot.ci(boot1,index=1)\n\tbciIntercept[[i]]<-rbind(confint(lm1)[1,],bciI$normal[2:3],bciI$basic[4:5],bciI$percent[4:5],bciI$bca[4:5])\n}\n\n# Plot the slopes\nplot(2, xlim=c(0,1),ylim=c(0,201))\n\nfor (i in 1:200) lines(x=c(bciSlope[[i]][1,]), y=c(i,i), col=\"blue\",lwd=2)\nabline(v=0.5)\n\nfor (i in 1:200) lines(x=c(bciSlope[[i]][5,]), y=c(i+0.3,i+0.3), lty=1, col=\"red\",lwd=2)\n\nfor (i in 1:200) lines(x=c(bciSlope[[i]][4,]), y=c(i+0.6,i+0.6), lty=1, col=\"green\",lwd=2)\n\n\n# Plot the intercept\nplot(2, xlim=c(0,15),ylim=c(0,201))\n\nfor (i in 1:200) lines(x=c(bciIntercept[[i]][1,]), y=c(i,i), col=\"blue\",lwd=2)\nabline(v=5)\n\nfor (i in 1:200) lines(x=c(bciIntercept[[i]][5,]), y=c(i+0.3,i+0.3), lty=1, col=\"red\",lwd=2)\n\nfor (i in 1:200) lines(x=c(bciIntercept[[i]][4,]), y=c(i+0.6,i+0.6), lty=1, col=\"green\",lwd=2)\n\n",
+    "created" : 1353868246135.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "588787979",
+    "id" : "6A410570",
+    "lastKnownWriteTime" : 1352993788,
+    "path" : "~/Documents/TeachServ/CLASSES/AGR206/PLS206F10/RstudioPLS206/bootDemo.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

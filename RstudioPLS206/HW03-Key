@@ -1,0 +1,312 @@
+> #======== Question 1 =========
+> clover<-read.csv("C:/temp/profile/Desktop/clover.txt", header=TRUE)
+> 
+> clover
+   group days    lnwt
+1      1    9 2.02629
+2      1    9 2.02629
+3      1    9 2.00326
+4      1   15 2.71707
+5      1   15 2.25655
+6      1   15 2.48681
+7      1   22 3.17759
+8      1   22 3.17759
+9      1   22 3.29272
+10     1   30 3.79929
+11     1   30 3.47693
+12     1   30 3.75324
+13     1   37 3.77626
+14     1   37 3.89139
+15     1   37 4.00652
+16     2    8 2.18747
+17     2    8 2.25655
+18     2    8 2.16444
+19     2   18 3.13154
+20     2   18 3.24667
+21     2   18 3.24667
+22     2   23 3.93745
+23     2   23 3.89139
+24     2   23 3.91442
+25     2   30 4.23678
+26     2   30 4.19073
+27     2   30 4.49007
+28     2   36 5.11177
+29     2   36 4.62823
+30     2   36 4.76638
+31     3    7 2.39470
+32     3    7 2.25655
+33     3    7 2.46378
+34     3   14 3.22364
+35     3   14 3.33877
+36     3   14 3.40785
+37     3   22 4.35191
+38     3   22 4.35191
+39     3   22 4.30586
+40     3   29 4.97362
+41     3   29 4.90454
+42     3   29 5.01967
+43     3   36 5.43414
+44     3   36 5.71045
+45     3   36 5.64137
+> 
+> # Make sure you have the correct names for the columns
+> # of the data
+> 
+> names(clover) # check the names of the variables in clover data
+[1] "group" "days"  "lnwt" 
+> 
+> # Transform the variable group into a factor
+> 
+> class(clover$group)
+[1] "integer"
+> 
+> clover$group<-as.factor(clover$group)
+> 
+> summary(clover)
+ group       days     
+ 1:15   Min.   : 7.0  
+ 2:15   1st Qu.:14.0  
+ 3:15   Median :22.0  
+        Mean   :22.4  
+        3rd Qu.:30.0  
+        Max.   :37.0  
+      lnwt      
+ Min.   :2.003  
+ 1st Qu.:2.717  
+ Median :3.753  
+ Mean   :3.623  
+ 3rd Qu.:4.352  
+ Max.   :5.710  
+> 
+> #======== Question 2 ========
+> # Change options for contrasts so treatment effects
+> # are calculated as differences from the overall mean
+> # instead of the default for R, by which treatment
+> # effects are calculated as differences from the
+> # first treatment.
+> 
+> options(contrasts =c("contr.sum", "contr.poly"))
+> 
+> # Specify linear model with all effects and interactions
+> 
+> mymodel<-lm(lnwt~group*days, clover)
+> 
+> # Display the summary of the results
+> 
+> summary(mymodel)
+
+Call:
+lm(formula = lnwt ~ group * days, data = clover)
+
+Residuals:
+    Min      1Q  Median      3Q 
+-0.2851 -0.1037 -0.0346  0.1613 
+    Max 
+ 0.2764 
+
+Coefficients:
+             Estimate Std. Error
+(Intercept)  1.583504   0.062411
+group1      -0.089557   0.088364
+group2      -0.048508   0.090520
+days         0.091338   0.002540
+group1:days -0.022139   0.003585
+group2:days  0.002504   0.003655
+            t value Pr(>|t|)    
+(Intercept)  25.372  < 2e-16 ***
+group1       -1.014    0.317    
+group2       -0.536    0.595    
+days         35.955  < 2e-16 ***
+group1:days  -6.176 2.95e-07 ***
+group2:days   0.685    0.497    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Residual standard error: 0.1705 on 39 degrees of freedom
+Multiple R-squared: 0.9769,	Adjusted R-squared: 0.9739 
+F-statistic: 329.2 on 5 and 39 DF,  p-value: < 2.2e-16 
+
+> 
+> # Display the analysis of variance for sequential
+> # and partial sum of squares
+> 
+> anova(mymodel)
+Analysis of Variance Table
+
+Response: lnwt
+           Df Sum Sq Mean Sq  F value
+group       2  8.549   4.275  146.988
+days        1 37.953  37.953 1305.062
+group:days  2  1.368   0.684   23.519
+Residuals  39  1.134   0.029         
+              Pr(>F)    
+group      < 2.2e-16 ***
+days       < 2.2e-16 ***
+group:days 1.992e-07 ***
+Residuals               
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+> 
+> # Load car package to be able to see the different types of SS
+> 
+> library(car)
+> 
+> help(Anova)
+> help(aov)
+> 
+> Anova(mymodel, type=3)
+Anova Table (Type III tests)
+
+Response: lnwt
+            Sum Sq Df   F value
+(Intercept) 18.721  1  643.7490
+group        0.078  2    1.3408
+days        37.594  1 1292.7375
+group:days   1.368  2   23.5186
+Residuals    1.134 39          
+               Pr(>F)    
+(Intercept) < 2.2e-16 ***
+group          0.2734    
+days        < 2.2e-16 ***
+group:days  1.992e-07 ***
+Residuals                
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+> 
+> #======== Question 3 ========
+> vcov(mymodel) # covariance matrix of paramter estimates
+              (Intercept)
+(Intercept)  3.895129e-03
+group1       1.793393e-05
+group2       4.035396e-04
+days        -1.447495e-04
+group1:days  2.002402e-07
+group2:days -1.405132e-05
+                   group1
+(Intercept)  1.793393e-05
+group1       7.808191e-03
+group2      -4.316602e-03
+days         2.002402e-07
+group1:days -2.892987e-04
+group2:days  1.586005e-04
+                   group2
+(Intercept)  4.035396e-04
+group1      -4.316602e-03
+group2       8.193797e-03
+days        -1.405132e-05
+group1:days  1.586005e-04
+group2:days -3.035502e-04
+                     days
+(Intercept) -1.447495e-04
+group1       2.002402e-07
+group2      -1.405132e-05
+days         6.453492e-06
+group1:days -5.750853e-08
+group2:days  4.508901e-07
+              group1:days
+(Intercept)  2.002402e-07
+group1      -2.892987e-04
+group2       1.586005e-04
+days        -5.750853e-08
+group1:days  1.284948e-05
+group2:days -6.846873e-06
+              group2:days
+(Intercept) -1.405132e-05
+group1       1.586005e-04
+group2      -3.035502e-04
+days         4.508901e-07
+group1:days -6.846873e-06
+group2:days  1.335787e-05
+> cov2cor(vcov(mymodel)) # correlation matrix of estimated parameters
+              (Intercept)
+(Intercept)  1.0000000000
+group1       0.0032519155
+group2       0.0714303232
+days        -0.9129745576
+group1:days  0.0008950509
+group2:days -0.0616009815
+                   group1      group2
+(Intercept)  0.0032519155  0.07143032
+group1       1.0000000000 -0.53966494
+group2      -0.5396649399  1.00000000
+days         0.0008920285 -0.06110507
+group1:days -0.9133317292  0.48878671
+group2:days  0.4910896564 -0.91752800
+                     days
+(Intercept) -0.9129745576
+group1       0.0008920285
+group2      -0.0611050670
+days         1.0000000000
+group1:days -0.0063152736
+group2:days  0.0485629090
+              group1:days group2:days
+(Intercept)  0.0008950509 -0.06160098
+group1      -0.9133317292  0.49108966
+group2       0.4887867054 -0.91752800
+days        -0.0063152736  0.04856291
+group1:days  1.0000000000 -0.52261388
+group2:days -0.5226138784  1.00000000
+> 
+> #======== Question 4 ========
+> # Load multcomp package to do comparisons and hypothesis testing.
+> 
+> library(multcomp)
+> 
+> # Create L vector for Yhay3.45, the slope for group 1****************************
+> 
+> (L4Yhat3.45<-c(1,-1,-1,45,-45,-45))
+[1]   1  -1  -1  45 -45 -45
+> 
+> # Use the glht function of multcomp to create CI
+> 
+> confint(glht(mymodel, linfct=matrix(L4Yhat3.45, nrow=1)))
+
+	 Simultaneous Confidence Intervals
+
+Fit: lm(formula = lnwt ~ group * days, data = clover)
+
+Quantile = 2.0227
+95% family-wise confidence level
+ 
+
+Linear Hypotheses:
+       Estimate lwr    upr   
+1 == 0 6.7153   6.4948 6.9359
+
+> 
+> #======== Question 5 ========
+> 
+> # use confint() directly on mymodel to get CI for parameters
+> 
+> confint(mymodel)
+                   2.5 %       97.5 %
+(Intercept)  1.457266049  1.709742237
+group1      -0.268290389  0.089175612
+group2      -0.231601352  0.134584970
+days         0.086199835  0.096476611
+group1:days -0.029389388 -0.014888245
+group2:days -0.004888461  0.009896773
+> 
+> #======== Question 6 ========
+> 
+> # Create L-vector
+> 
+> (L4Yhat1.15.Yhat.2.15 <- c(0,1,-1,0,15,-15))
+[1]   0   1  -1   0  15 -15
+> 
+> # Use summary() with glht for test
+> 
+> summary(glht(mymodel, linfct=matrix(L4Yhat1.15.Yhat.2.15, nrow=1)))
+
+	 Simultaneous Tests for General Linear Hypotheses
+
+Fit: lm(formula = lnwt ~ group * days, data = clover)
+
+Linear Hypotheses:
+       Estimate Std. Error t value
+1 == 0 -0.41069    0.07944   -5.17
+       Pr(>|t|)    
+1 == 0 7.32e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+(Adjusted p values reported -- single-step method)

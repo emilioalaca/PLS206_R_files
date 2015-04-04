@@ -1,0 +1,15 @@
+{
+    "contents" : "# Firts, it is necessary to load the boot package.\nlibrary(boot)\n# Second, we read the data from a comma-separated-value file\n# that has the variable names in the first row.\nnotodat<-read.csv(\"/Users/ealaca/Documents/AGR206/PLS206F10/Examples/Notonecta.csv\", header=TRUE)\n# Next, we create the function that returns the estimated\n# coefficients for the nonlinear model for each bootstrap sample.\ngammas<-function(data,i)\n{\nbootsample<-data[i,]\nnoto.i<-nls(Ne ~ a*No/(1 + a*No*Th), data=bootsample, start= list(a=0.1, Th=0.01))\ncoef(noto.i)\n}\n# Notice that we do not use a Self Starting nonlinear function, so we need to\n# pass initial values for each parameter. Self-starting functions are available\n# for some models, including the Michaelis-Menten equation. These functions have\n# internal programming to figure out good starting values from the data.\n# At the next step we use the boot function to create 2000 bootstrap samples\n# and the corresponding estimated parameters.\nnoto.boot<-boot(notodat, gammas,R=2000)\n# Use the boot.ci function to obtain the confidence intervals\n# first for a\nboot.ci(noto.boot, index=1)\n# and second for Th\nboot.ci(noto.boot, index=2)\n# Now we make the estimates based on the \"large-sample\"\n# asymptotic properties.\nconfint(noto.nls<-nls(Ne ~ a*No/(1 + a*No*Th),\n data=notodat, start= list(a=0.1, Th=0.01)))\n# Notice that the \"original\" CI based on the assumptions of \"large-sample\"\n# for a is (0.34, 0.75) whereas the bootstrap CI is narrower (0.37, 0.69).\n# Both methods yield similar CI's for Th.\nplot(density(noto.boot$t[,1]),xlab=\"estimated rate of successful search\")\nabline(v=mean(noto.boot$t[,1]))\nabline(v=coef(noto.nls)[1], lty=2)\nabline(v=c(0.33642092, 0.75444568), lty=2)\nabline(v=c(0.3666,  0.6907), lty=1)\nplot(density(noto.boot$t[,2]),xlab=\"handling time\")\nabline(v=mean(noto.boot$t[,2]))\nabline(v=coef(noto.nls)[2], lty=2)\nabline(v=c(0.02529264, 0.05437306), lty=2)\nabline(v=c(0.0250,  0.0582), lty=1)\n#\n# The BCa CI for Th based on the bootstrap is wider than the one based on the\n# asymptotic properties. This is relaed to the fact that the data show \n# heterogeneity of variance, with more variance in the range that contains\n# information about Th and less variance in the range of low prey density,\n# where the data has information about a.\n ",
+    "created" : 1353281636589.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "138688373",
+    "id" : "BA154DE5",
+    "lastKnownWriteTime" : 1290542172,
+    "path" : "~/Documents/TeachServ/CLASSES/AGR206/PLS206F10/RstudioPLS206/notoNLIN2.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

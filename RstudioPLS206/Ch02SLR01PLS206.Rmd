@@ -1,0 +1,9 @@
+---
+title: "SIMPLE LINEAR REGRESSION"
+author: "Emilio A. Laca"
+date: "01 October 2014"
+output:
+  html_document:
+    toc: yes
+---
+
