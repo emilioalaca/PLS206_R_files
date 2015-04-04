@@ -4,7 +4,8 @@ data(BodyWeight) #each package comes with complete examples to learn their use.
 options(contrasts=c("contr.treatment", "contr.poly"))
 
 class(BodyWeight) # this is a groupedData object
-# therefore, rat is already a grouping factor included in the randm effects by default. See the estimated random effects in the model. There are random effects in the intercept and time slope for each rat.
+# therefore, rat is already a grouping factor included in the randm effects by default.
+# See the estimated random effects in the model. There are random effects in the intercept and time slope for each rat.
 bw1.lme<-lme(weight~Time*Diet, BodyWeight, random=~Time)
 bw2.lme<-lme(weight~Time*Diet, BodyWeight, random=~Time|Rat)
 bw1.lme;bw2.lme
@@ -23,4 +24,5 @@ anova(bw2.lme, bw3.lme) #check significance of  adding a model for lack of indep
 plot(Variogram(bw3.lme, form=~Time, maxDist=42))
 # what variogram model was used? find the default
 
-plot( Variogram(bw3.lme, form = ~ Time, maxDist = 42, resType = "n", robust = T) ) # check variogram of data corrected for temporal correlation.
+# check variogram of data corrected for temporal correlation.
+plot( Variogram(bw3.lme, form = ~ Time, maxDist = 42, resType = "n", robust = T) ) 
